@@ -1,0 +1,259 @@
+version: '3'
+
+vars:
+  APP_NAME: Zeus - Athena Query Sharing Platform
+  BACKEND_DIR: backend
+  FRONTEND_DIR: frontend
+
+tasks:
+  default:
+    desc: Display available tasks
+    cmds:
+      - task --list-all
+    silent: true
+
+  dev:
+    desc: Start development environment
+    cmds:
+      - docker-compose -f docker-compose.dev.yml down --volumes --remove-orphans || true
+      - docker-compose -f docker-compose.dev.yml up --build -d
+      - echo "Starting development environment..."
+      - sleep 10
+      - task health:dev
+
+  build:
+    desc: Build the application
+    deps: [build:frontend, build:backend]
+
+  build:frontend:
+    desc: Build the frontend
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "Building frontend..."
+      - npm run build
+
+  build:backend:
+    desc: Build the backend
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - echo "Building backend..."
+      - go build -o zeus .
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - echo "Cleaning build artifacts..."
+      - rm -rf {{.FRONTEND_DIR}}/dist/
+      - rm -f {{.BACKEND_DIR}}/zeus
+      - docker-compose -f docker-compose.dev.yml down --volumes --remove-orphans
+      - docker-compose down --volumes --remove-orphans
+
+  test:
+    desc: Run all tests
+    deps: [test:frontend, test:backend]
+
+  test:frontend:
+    desc: Run frontend tests
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm test
+
+  test:backend:
+    desc: Run backend tests
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - go test ./...
+
+  docker:dev:
+    desc: Start development environment with Docker
+    cmds:
+      - docker-compose -f docker-compose.dev.yml up --build
+
+  dev:aws:
+    desc: Start development environment with real AWS credentials
+    deps: [aws:env]
+    cmds:
+      - docker-compose -f docker-compose.dev.yml down --volumes --remove-orphans || true
+      - docker-compose -f docker-compose.dev.yml -f docker-compose.aws.yml up --build -d
+      - echo "Starting development environment with AWS credentials..."
+      - sleep 10
+      - task health:dev
+
+  docker:prod:
+    desc: Start production environment with Docker
+    deps: [aws:env]
+    cmds:
+      - docker-compose up --build
+
+  aws:env:
+    desc: Generate aws.env file with current AWS credentials
+    cmds:
+      - aws configure export-credentials --format env > aws.env
+      - echo "Generated aws.env with current AWS credentials"
+
+  localstack:init:
+    desc: Initialize LocalStack services
+    cmds:
+      - ./localstack-init.sh
+
+  deps:
+    desc: Install all dependencies
+    deps: [deps:backend, deps:frontend]
+
+  deps:backend:
+    desc: Install backend dependencies
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - echo "Installing backend dependencies..."
+      - go mod download
+
+  deps:frontend:
+    desc: Install frontend dependencies
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - echo "Installing frontend dependencies..."
+      - npm install
+
+  setup:
+    desc: Setup the project for development
+    deps: [deps]
+    cmds:
+      - echo "Setup complete! Run 'task dev' to start development environment."
+
+  start:backend:
+    desc: Start backend server locally
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - go run .
+
+  start:frontend:
+    desc: Start frontend dev server locally
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run dev
+
+  lint:
+    desc: Run linting for all components
+    deps: [lint:backend, lint:frontend]
+
+  lint:backend:
+    desc: Run Go linting
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - go vet ./...
+      - go fmt ./...
+
+  lint:frontend:
+    desc: Run frontend linting
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run lint
+
+  format:
+    desc: Format code for all components
+    deps: [format:backend, format:frontend]
+
+  format:backend:
+    desc: Format Go code
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - go fmt ./...
+
+  format:frontend:
+    desc: Format frontend code
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run format
+
+  docker:logs:
+    desc: View Docker Compose logs
+    cmds:
+      - docker-compose -f docker-compose.dev.yml logs -f
+
+  docker:down:
+    desc: Stop Docker Compose services
+    cmds:
+      - docker-compose -f docker-compose.dev.yml down
+
+  docker:clean:
+    desc: Clean Docker resources
+    cmds:
+      - docker-compose -f docker-compose.dev.yml down --volumes --remove-orphans
+      - docker system prune -f
+
+  db:reset:
+    desc: Reset the MongoDB database
+    cmds:
+      - docker-compose -f docker-compose.dev.yml exec mongodb mongosh zeus --eval "db.dropDatabase()"
+
+  health:
+    desc: Check service health
+    cmds:
+      - echo "Checking backend health..."
+      - curl -s http://localhost:8080/api/health || echo "Backend not accessible"
+      - echo "Checking LocalStack health..."
+      - curl -s http://localhost:4566/_localstack/health || echo "LocalStack not accessible"
+
+  health:dev:
+    desc: Check development environment health
+    cmds:
+      - echo "Checking development environment health..."
+      - echo "Checking containers status..."
+      - docker-compose -f docker-compose.dev.yml ps
+      - echo ""
+      - echo "Checking frontend (port 3001)..."
+      - curl -s http://localhost:3001 > /dev/null && echo "✓ Frontend is running" || echo "✗ Frontend not accessible"
+      - echo "Checking backend (port 8081)..."
+      - curl -s http://localhost:8081/api/health > /dev/null && echo "✓ Backend is running" || echo "✗ Backend not accessible"
+      - echo "Checking MongoDB (port 27018)..."
+      - nc -z localhost 27018 && echo "✓ MongoDB is running" || echo "✗ MongoDB not accessible"
+      - echo "Checking LocalStack (port 4567)..."
+      - curl -s http://localhost:4567/_localstack/health > /dev/null && echo "✓ LocalStack is running" || echo "✗ LocalStack not accessible"
+      - echo ""
+      - echo "Development environment status check complete!"
+
+  test:query:
+    desc: Test Athena query execution with sample query
+    cmds:
+      - echo "Testing Athena query execution..."
+      - |
+        EXECUTION_ID=$(curl -s 'http://localhost:3001/api/athena/execute' \
+          -H 'Accept: application/json, text/plain, */*' \
+          -H 'Content-Type: application/json' \
+          --data-raw '{"sql":"-- Simple test query\nSELECT 1 as test_column, '\''Hello World'\'' as message;"}' | \
+          grep -o '"executionId":"[^"]*"' | cut -d'"' -f4)
+        echo "Execution ID: $EXECUTION_ID"
+        if [ -n "$EXECUTION_ID" ]; then
+          echo "Query submitted successfully!"
+          echo "Waiting for query to complete (5 seconds)..."
+          sleep 5
+          echo "Checking query results..."
+          curl "http://localhost:3001/api/athena/results/$EXECUTION_ID" \
+            -H 'Accept: application/json' \
+            -w "\nStatus Code: %{http_code}\n"
+        else
+          echo "Failed to submit query"
+        fi
+
+  test:query:table:
+    desc: Test query against a real table (requires table setup)
+    cmds:
+      - echo "Testing query against users table..."
+      - |
+        EXECUTION_ID=$(curl -s 'http://localhost:3001/api/athena/execute' \
+          -H 'Accept: application/json, text/plain, */*' \
+          -H 'Content-Type: application/json' \
+          --data-raw '{"sql":"-- Query against users table\nSELECT * FROM users LIMIT 10;"}' | \
+          grep -o '"executionId":"[^"]*"' | cut -d'"' -f4)
+        echo "Execution ID: $EXECUTION_ID"
+        if [ -n "$EXECUTION_ID" ]; then
+          echo "Query submitted successfully!"
+          echo "Waiting for query to complete (10 seconds)..."
+          sleep 10
+          echo "Checking query results..."
+          curl "http://localhost:3001/api/athena/results/$EXECUTION_ID" \
+            -H 'Accept: application/json' \
+            -w "\nStatus Code: %{http_code}\n"
+        else
+          echo "Failed to submit query"
+        fi
