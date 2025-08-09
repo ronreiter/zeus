@@ -114,19 +114,19 @@ export default function Sidebar({ queries, onQuerySelect, onNewQuery, onTableCli
                   )}
                 </div>
                 
-                {hoveredQuery === query.id && (
-                  <button
-                    onClick={(e) => handleDeleteQuery(e, query.id)}
-                    className={`ml-2 p-1 rounded transition-colors ${
-                      isDarkMode 
-                        ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20' 
-                        : 'text-red-600 hover:text-red-700 hover:bg-red-50'
-                    }`}
-                    title="Delete Query"
-                  >
-                    <IconTrash size={16} />
-                  </button>
-                )}
+                <button
+                  onClick={(e) => handleDeleteQuery(e, query.id)}
+                  className={`ml-2 p-1 rounded transition-all ${
+                    hoveredQuery === query.id
+                      ? isDarkMode 
+                        ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20 opacity-100' 
+                        : 'text-red-600 hover:text-red-700 hover:bg-red-50 opacity-100'
+                      : 'opacity-0 pointer-events-none'
+                  }`}
+                  title="Delete Query"
+                >
+                  <IconTrash size={16} />
+                </button>
               </div>
             ))}
             
