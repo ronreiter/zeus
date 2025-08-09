@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import React from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { IconPlus, IconTrash, IconBolt, IconDatabase, IconTable, IconChevronDown, IconChevronRight } from '@tabler/icons-react'
+import { IconPlus, IconTrash, IconBolt, IconDatabase, IconTable, IconChevronDown, IconChevronRight, IconSearch } from '@tabler/icons-react'
 import type { Query } from '../types'
 import { queryApi } from '../api'
 import { useDarkMode } from '../contexts/DarkModeContext'
@@ -17,6 +18,7 @@ export default function Sidebar({ queries, onQuerySelect, onNewQuery, onTableCli
   const { isDarkMode } = useDarkMode()
   const [hoveredQuery, setHoveredQuery] = useState<string | null>(null)
   const [expandedDatabases, setExpandedDatabases] = useState<Set<string>>(new Set())
+  const [searchQuery, setSearchQuery] = useState('')
 
   const { data: catalog } = useQuery({
     queryKey: ['athenaCatalog'],
@@ -47,6 +49,46 @@ export default function Sidebar({ queries, onQuerySelect, onNewQuery, onTableCli
       return newSet
     })
   }
+
+  // Filter databases and tables based on search query
+  const filteredCatalog = React.useMemo(() => {
+    if (!catalog || !searchQuery.trim()) {
+      return catalog
+    }
+
+    const query = searchQuery.toLowerCase().trim()
+    
+    return {
+      databases: catalog.databases.map(database => {
+        const databaseNameMatch = database.name.toLowerCase().includes(query)
+        const filteredTables = database.tables.filter(table => 
+          table.name.toLowerCase().includes(query)
+        )
+
+        // Include database if its name matches or if it has matching tables
+        if (databaseNameMatch || filteredTables.length > 0) {
+          return {
+            ...database,
+            tables: filteredTables
+          }
+        }
+        return null
+      }).filter(Boolean) as typeof catalog.databases
+    }
+  }, [catalog, searchQuery])
+
+  // Auto-expand databases when searching
+  React.useEffect(() => {
+    if (searchQuery.trim() && filteredCatalog) {
+      const expandedSet = new Set<string>()
+      filteredCatalog.databases.forEach(database => {
+        if (database.tables.length > 0) {
+          expandedSet.add(database.name)
+        }
+      })
+      setExpandedDatabases(expandedSet)
+    }
+  }, [searchQuery, filteredCatalog])
 
   return (
     <div className={`w-80 border-r flex flex-col transition-colors ${
@@ -146,8 +188,29 @@ export default function Sidebar({ queries, onQuerySelect, onNewQuery, onTableCli
           <h2 className={`text-sm font-medium mb-3 transition-colors ${
             isDarkMode ? 'text-gray-300' : 'text-gray-700'
           }`}>Data Catalog</h2>
+          
+          {/* Search Input */}
+          <div className="mb-3 relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <IconSearch size={14} className={`transition-colors ${
+                isDarkMode ? 'text-gray-500' : 'text-gray-400'
+              }`} />
+            </div>
+            <input
+              type="text"
+              placeholder="Search tables..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={`w-full pl-9 pr-3 py-2 text-xs rounded-md border transition-colors ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+              } focus:outline-none`}
+            />
+          </div>
+          
           <div className="space-y-1">
-            {catalog?.databases.map((database) => (
+            {filteredCatalog?.databases.map((database) => (
               <div key={database.name} className="space-y-1">
                 <div
                   className={`flex items-center p-2 rounded-lg cursor-pointer transition-colors ${
@@ -224,11 +287,11 @@ export default function Sidebar({ queries, onQuerySelect, onNewQuery, onTableCli
               </div>
             )}
             
-            {catalog?.databases.length === 0 && (
+            {catalog && filteredCatalog?.databases.length === 0 && (
               <div className={`text-sm text-center py-4 transition-colors ${
                 isDarkMode ? 'text-gray-400' : 'text-gray-500'
               }`}>
-                No databases found in catalog
+                {searchQuery.trim() ? 'No matching tables found' : 'No databases found in catalog'}
               </div>
             )}
           </div>
