@@ -79,6 +79,21 @@ tasks:
       - sleep 10
       - task health:dev
 
+  dev-blocking:
+    desc: Start development environment (blocking)
+    cmds:
+      - docker-compose -f docker-compose.dev.yml down --volumes --remove-orphans || true
+      - docker-compose -f docker-compose.dev.yml up --build
+      - echo "Development environment stopped."
+
+  dev:aws-blocking:
+    desc: Start development environment with real AWS credentials (blocking)
+    deps: [aws:env]
+    cmds:
+      - docker-compose -f docker-compose.dev.yml down --volumes --remove-orphans || true
+      - docker-compose -f docker-compose.dev.yml -f docker-compose.aws.yml up --build
+      - echo "Development environment with AWS credentials stopped."
+
   docker:prod:
     desc: Start production environment with Docker
     deps: [aws:env]

@@ -39,7 +39,7 @@ export default function QueryRunsList({ queryId, onRunClick }: QueryRunsListProp
       case 'RUNNING':
         return 'bg-blue-100 text-blue-800'
       case 'QUEUED':
-        return 'bg-yellow-100 text-yellow-800'
+        return 'bg-blue-100 text-blue-800'  // Same as RUNNING
       case 'CANCELLED':
         return 'bg-gray-100 text-gray-800'
       default:
@@ -98,10 +98,10 @@ export default function QueryRunsList({ queryId, onRunClick }: QueryRunsListProp
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(run.status)}`}>
-                      {run.status === 'RUNNING' && (
+                      {(run.status === 'RUNNING' || run.status === 'QUEUED') && (
                         <IconLoader size={12} className="mr-1 animate-spin" />
                       )}
-                      {run.status}
+                      {run.status === 'QUEUED' ? 'Running' : run.status}
                     </span>
                     <div className="text-xs text-gray-500">
                       {new Date(run.executedAt).toLocaleString()}

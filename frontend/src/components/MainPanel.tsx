@@ -55,6 +55,13 @@ export default function MainPanel({
     setResultsKey(prev => prev + 1) // Force re-render of results
   }
 
+  const handleStatusChange = (oldStatus: string | undefined, newStatus: string) => {
+    // Force refresh the query runs list when a query completes
+    if (activeQuery.id) {
+      queryClient.invalidateQueries({ queryKey: ['queryRuns', activeQuery.id] })
+    }
+  }
+
   if (!activeQuery) {
     return (
       <div className={`flex-1 flex items-center justify-center transition-colors ${
@@ -125,7 +132,8 @@ export default function MainPanel({
           <div className="border-t border-gray-200">
             <ResultsPanel 
               key={resultsKey} 
-              executionId={currentExecutionId} 
+              executionId={currentExecutionId}
+              onStatusChange={handleStatusChange}
             />
           </div>
         )}

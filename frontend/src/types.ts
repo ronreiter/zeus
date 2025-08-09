@@ -27,6 +27,7 @@ export interface QueryResults {
   size: number;
   status: 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED';
   errorMessage?: string;
+  completedAt?: string;
 }
 
 export interface OpenQuery {

@@ -189,9 +189,9 @@ func getQueryRuns(c *gin.Context) {
 		runs = []QueryRun{}
 	}
 
-	// Update status of running queries
+	// Update status of non-final queries
 	for i, run := range runs {
-		if run.Status == "RUNNING" {
+		if run.Status == "RUNNING" || run.Status == "QUEUED" {
 			updatedRun, err := updateQueryRunStatus(ctx, collection, run)
 			if err == nil {
 				runs[i] = updatedRun
@@ -227,7 +227,7 @@ func executeQuery(c *gin.Context) {
 		QueryID:     queryID,
 		SQL:         req.SQL,
 		ExecutionID: executionID,
-		Status:      "RUNNING",
+		Status:      "QUEUED",
 		ExecutedAt:  time.Now(),
 	}
 
@@ -294,6 +294,15 @@ func getQueryResults(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Find the QueryRun record to get completion timestamp
+	ctx := context.Background()
+	collection := db.Collection("queryruns")
+	var queryRun QueryRun
+	err = collection.FindOne(ctx, bson.M{"executionId": executionID}).Decode(&queryRun)
+	if err == nil && queryRun.CompletedAt != nil {
+		results.CompletedAt = queryRun.CompletedAt
 	}
 
 	c.JSON(http.StatusOK, results)

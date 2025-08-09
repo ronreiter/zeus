@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { Routes, Route, useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { queryApi } from './api'
@@ -56,6 +56,7 @@ function AppContent() {
   const [activeQueryIndex, setActiveQueryIndex] = useState(0)
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
   const [saveDialogQueryIndex, setSaveDialogQueryIndex] = useState<number | null>(null)
+  const isUserInitiatedChange = useRef(false)
 
   const { data: queries = [], refetch: refetchQueries } = useQuery({
     queryKey: ['queries'],
@@ -86,6 +87,12 @@ function AppContent() {
 
   // Handle URL-based query loading
   useEffect(() => {
+    if (isUserInitiatedChange.current) {
+      // Reset flag and skip URL logic for user-initiated changes
+      isUserInitiatedChange.current = false
+      return
+    }
+
     if (queryId && queries.length > 0) {
       const query = queries.find(q => q.id === queryId)
       if (query) {
@@ -98,11 +105,24 @@ function AppContent() {
           setActiveQueryIndex(existingIndex)
         }
       }
-    } else if (!queryId && openQueries.length > 0 && openQueries[activeQueryIndex]?.id) {
+    } else if (!queryId && openQueries.length > 0 && openQueries[activeQueryIndex]?.id && !openQueries[activeQueryIndex]?.isUnsaved) {
       // No queryId in URL but we have an active saved query, update URL
       navigate(`/query/${openQueries[activeQueryIndex].id}`)
     }
   }, [queryId, queries, openQueries, activeQueryIndex, navigate, openQuery])
+
+  const handleActiveQueryChange = useCallback((index: number) => {
+    isUserInitiatedChange.current = true
+    setActiveQueryIndex(index)
+    
+    // Handle URL navigation for saved queries
+    const targetQuery = openQueries[index]
+    if (targetQuery?.id && !targetQuery?.isUnsaved) {
+      navigate(`/query/${targetQuery.id}`)
+    } else {
+      navigate('/')
+    }
+  }, [openQueries, navigate])
 
   const createNewQuery = useCallback(() => {
     const newQuery: OpenQuery = {
@@ -114,6 +134,23 @@ function AppContent() {
     }
 
     setOpenQueries(prev => [...prev, newQuery])
+    isUserInitiatedChange.current = true
+    setActiveQueryIndex(openQueries.length)
+    navigate('/')
+  }, [openQueries, navigate])
+
+  const createQueryFromTable = useCallback((databaseName: string, tableName: string) => {
+    const sql = `SELECT * FROM ${databaseName}.${tableName} LIMIT 100;`
+    const newQuery: OpenQuery = {
+      name: `Query ${tableName}`,
+      sql: sql,
+      description: `Query to explore ${databaseName}.${tableName}`,
+      isUnsaved: true,
+      isDirty: false,
+    }
+
+    setOpenQueries(prev => [...prev, newQuery])
+    isUserInitiatedChange.current = true
     setActiveQueryIndex(openQueries.length)
     navigate('/')
   }, [openQueries, navigate])
@@ -190,13 +227,14 @@ function AppContent() {
         queries={queries}
         onQuerySelect={openQuery}
         onNewQuery={createNewQuery}
+        onTableClick={createQueryFromTable}
         refetchQueries={refetchQueries}
       />
       
       <MainPanel
         openQueries={openQueries}
         activeQueryIndex={activeQueryIndex}
-        onActiveQueryChange={setActiveQueryIndex}
+        onActiveQueryChange={handleActiveQueryChange}
         onQueryUpdate={updateQuery}
         onQueryClose={closeQuery}
         onQuerySave={openSaveDialog}

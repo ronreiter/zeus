@@ -9,10 +9,11 @@ interface SidebarProps {
   queries: Query[]
   onQuerySelect: (query: Query) => void
   onNewQuery: () => void
+  onTableClick: (databaseName: string, tableName: string) => void
   refetchQueries: () => void
 }
 
-export default function Sidebar({ queries, onQuerySelect, onNewQuery, refetchQueries }: SidebarProps) {
+export default function Sidebar({ queries, onQuerySelect, onNewQuery, onTableClick, refetchQueries }: SidebarProps) {
   const { isDarkMode } = useDarkMode()
   const [hoveredQuery, setHoveredQuery] = useState<string | null>(null)
   const [expandedDatabases, setExpandedDatabases] = useState<Set<string>>(new Set())
@@ -187,7 +188,8 @@ export default function Sidebar({ queries, onQuerySelect, onNewQuery, refetchQue
                             ? 'hover:bg-gray-700' 
                             : 'hover:bg-gray-100'
                         }`}
-                        title={`${database.name}.${table.name} (${table.type})`}
+                        title={`Click to query ${database.name}.${table.name} (${table.type})`}
+                        onClick={() => onTableClick(database.name, table.name)}
                       >
                         <div className="flex items-center space-x-2 flex-1">
                           <IconTable size={14} className={`transition-colors ${

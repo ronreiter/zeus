@@ -251,10 +251,10 @@ func fetchAthenaCatalog() (*AthenaCatalog, error) {
 			}
 			
 			if table.Parameters != nil {
-				if location, ok := table.Parameters["location"]; ok {
+				if location, ok := table.Parameters["location"]; ok && location != nil {
 					catalogTable.Location = *location
 				}
-				if inputFormat, ok := table.Parameters["inputformat"]; ok {
+				if inputFormat, ok := table.Parameters["inputformat"]; ok && inputFormat != nil {
 					catalogTable.InputFormat = *inputFormat
 				}
 			}

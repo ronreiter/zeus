@@ -51,6 +51,7 @@ type QueryResults struct {
 	Size      int           `json:"size"`
 	Status    string        `json:"status"`    // QUEUED, RUNNING, SUCCEEDED, FAILED, CANCELLED
 	ErrorMessage *string    `json:"errorMessage,omitempty"`
+	CompletedAt  *time.Time `json:"completedAt,omitempty"`
 }
 
 type CatalogTable struct {
