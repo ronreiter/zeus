@@ -44,9 +44,34 @@ type ExecuteQueryRequest struct {
 }
 
 type QueryResults struct {
-	Columns []string      `json:"columns"`
-	Rows    [][]string    `json:"rows"`
-	Total   int64         `json:"total"`
-	Page    int           `json:"page"`
-	Size    int           `json:"size"`
+	Columns   []string      `json:"columns"`
+	Rows      [][]string    `json:"rows"`
+	Total     int64         `json:"total"`
+	Page      int           `json:"page"`
+	Size      int           `json:"size"`
+	Status    string        `json:"status"`    // QUEUED, RUNNING, SUCCEEDED, FAILED, CANCELLED
+	ErrorMessage *string    `json:"errorMessage,omitempty"`
+}
+
+type CatalogTable struct {
+	Name        string   `json:"name"`
+	Type        string   `json:"type"`
+	Columns     []Column `json:"columns"`
+	Location    string   `json:"location,omitempty"`
+	InputFormat string   `json:"inputFormat,omitempty"`
+}
+
+type Column struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+type CatalogDatabase struct {
+	Name        string         `json:"name"`
+	Description string         `json:"description,omitempty"`
+	Tables      []CatalogTable `json:"tables"`
+}
+
+type AthenaCatalog struct {
+	Databases []CatalogDatabase `json:"databases"`
 }

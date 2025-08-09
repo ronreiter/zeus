@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Query, QueryRun, QueryResults } from './types';
+import type { Query, QueryRun, QueryResults, AthenaCatalog } from './types';
 
 const api = axios.create({
   baseURL: '/api',
@@ -24,4 +24,5 @@ export const queryApi = {
     api.get<QueryResults>(`/athena/results/${executionId}?page=${page}&size=${size}`),
   exportResults: (executionId: string) =>
     api.get(`/athena/export/${executionId}`, { responseType: 'blob' }),
+  getAthenaCatalog: () => api.get<AthenaCatalog>('/athena/catalog'),
 };

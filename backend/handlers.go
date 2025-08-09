@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -188,6 +189,16 @@ func getQueryRuns(c *gin.Context) {
 		runs = []QueryRun{}
 	}
 
+	// Update status of running queries
+	for i, run := range runs {
+		if run.Status == "RUNNING" {
+			updatedRun, err := updateQueryRunStatus(ctx, collection, run)
+			if err == nil {
+				runs[i] = updatedRun
+			}
+		}
+	}
+
 	c.JSON(http.StatusOK, runs)
 }
 
@@ -308,4 +319,73 @@ func exportResults(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+}
+
+func getAthenaCatalog(c *gin.Context) {
+	catalog, err := fetchAthenaCatalog()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, catalog)
+}
+
+// Helper function to update query run status by checking Athena
+func updateQueryRunStatus(ctx context.Context, collection *mongo.Collection, run QueryRun) (QueryRun, error) {
+	// Get current status from Athena
+	results, err := getAthenaResults(run.ExecutionID, 1, 1)
+	if err != nil {
+		return run, err
+	}
+
+	// Only update if status changed
+	if results.Status != run.Status {
+		now := time.Now()
+		update := bson.M{
+			"$set": bson.M{
+				"status": results.Status,
+			},
+		}
+
+		// Set completion time and error message if applicable
+		if results.Status == "SUCCEEDED" || results.Status == "FAILED" || results.Status == "CANCELLED" {
+			update["$set"].(bson.M)["completedAt"] = now
+			
+			// Get S3 URL for successful queries
+			if results.Status == "SUCCEEDED" {
+				s3URL, err := getResultsS3URL(run.ExecutionID)
+				if err == nil {
+					update["$set"].(bson.M)["resultsS3Url"] = s3URL
+				}
+			}
+			
+			// Set error message for failed queries
+			if results.Status == "FAILED" && results.ErrorMessage != nil {
+				update["$set"].(bson.M)["errorMessage"] = *results.ErrorMessage
+			}
+		}
+
+		_, err := collection.UpdateOne(ctx, bson.M{"_id": run.ID}, update)
+		if err != nil {
+			return run, err
+		}
+
+		// Update the run object with new values
+		run.Status = results.Status
+		if results.Status == "SUCCEEDED" || results.Status == "FAILED" || results.Status == "CANCELLED" {
+			run.CompletedAt = &now
+		}
+		if results.Status == "SUCCEEDED" {
+			s3URL, err := getResultsS3URL(run.ExecutionID)
+			if err == nil {
+				run.ResultsS3URL = s3URL
+			}
+		}
+		if results.Status == "FAILED" && results.ErrorMessage != nil {
+			run.ErrorMessage = *results.ErrorMessage
+		}
+	}
+
+	return run, nil
 }

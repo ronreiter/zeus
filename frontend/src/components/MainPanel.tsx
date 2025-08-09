@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { IconPlus, IconSun, IconMoon } from '@tabler/icons-react'
 import type { OpenQuery } from '../types'
 import QueryTabs from './QueryTabs'
@@ -27,6 +28,7 @@ export default function MainPanel({
   onNewQuery
 }: MainPanelProps) {
   const { isDarkMode, toggleDarkMode } = useDarkMode()
+  const queryClient = useQueryClient()
   const [currentExecutionId, setCurrentExecutionId] = useState<string | null>(null)
   const [resultsKey, setResultsKey] = useState(0)
 
@@ -39,6 +41,16 @@ export default function MainPanel({
   }, [activeQueryIndex])
 
   const handleQueryExecute = (executionId: string) => {
+    setCurrentExecutionId(executionId)
+    setResultsKey(prev => prev + 1) // Force re-render of results
+    
+    // Immediately invalidate and refetch query runs to show the new run
+    if (activeQuery.id) {
+      queryClient.invalidateQueries({ queryKey: ['queryRuns', activeQuery.id] })
+    }
+  }
+
+  const handleRunClick = (executionId: string) => {
     setCurrentExecutionId(executionId)
     setResultsKey(prev => prev + 1) // Force re-render of results
   }
@@ -105,7 +117,7 @@ export default function MainPanel({
           </div>
           
           <div className="w-80 border-l border-gray-200">
-            <QueryRunsList queryId={activeQuery.id} />
+            <QueryRunsList queryId={activeQuery.id} onRunClick={handleRunClick} />
           </div>
         </div>
         

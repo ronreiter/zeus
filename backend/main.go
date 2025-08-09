@@ -64,6 +64,7 @@ func main() {
 		api.POST("/athena/execute", executeAthenaQuery)
 		api.GET("/athena/results/:executionId", getQueryResults)
 		api.GET("/athena/export/:executionId", exportResults)
+		api.GET("/athena/catalog", getAthenaCatalog)
 	}
 
 	// Fallback to serve React app for any non-API routes

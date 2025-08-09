@@ -71,12 +71,29 @@ func getAthenaResults(executionID string, page, size int) (*QueryResults, error)
 	}
 
 	status := *describeResult.QueryExecution.Status.State
+	fmt.Printf("Query %s status: %s\n", executionID, status)
+	
+	// If query is not yet complete, return status information without error
 	if status != "SUCCEEDED" {
-		errorReason := ""
+		errorMessage := ""
 		if describeResult.QueryExecution.Status.StateChangeReason != nil {
-			errorReason = *describeResult.QueryExecution.Status.StateChangeReason
+			errorMessage = *describeResult.QueryExecution.Status.StateChangeReason
 		}
-		return nil, fmt.Errorf("query execution failed or not completed. Status: %s, Reason: %s", status, errorReason)
+		
+		result := &QueryResults{
+			Columns: []string{},
+			Rows:    [][]string{},
+			Total:   0,
+			Page:    page,
+			Size:    size,
+			Status:  status,
+		}
+		
+		if errorMessage != "" {
+			result.ErrorMessage = &errorMessage
+		}
+		
+		return result, nil
 	}
 
 	// Get results
@@ -131,6 +148,7 @@ func getAthenaResults(executionID string, page, size int) (*QueryResults, error)
 		Total:   int64(len(rows)),
 		Page:    page,
 		Size:    size,
+		Status:  status,
 	}, nil
 }
 
@@ -178,5 +196,86 @@ func proxyS3File(c *gin.Context, s3URL string) error {
 	// Stream the file to the client
 	_, err = io.Copy(c.Writer, result.Body)
 	return err
+}
+
+func fetchAthenaCatalog() (*AthenaCatalog, error) {
+	var databases []CatalogDatabase
+	
+	// For now, let's focus on the default 'AwsDataCatalog'
+	// In a production environment, you'd iterate through all catalogs
+	catalogName := "AwsDataCatalog"
+	
+	// List databases in the default catalog
+	listDatabasesInput := &athena.ListDatabasesInput{
+		CatalogName: &catalogName,
+	}
+	
+	databasesResult, err := athenaClient.ListDatabases(listDatabasesInput)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list databases: %v", err)
+	}
+
+	for _, db := range databasesResult.DatabaseList {
+		database := CatalogDatabase{
+			Name:        *db.Name,
+			Description: "",
+			Tables:      []CatalogTable{},
+		}
+		
+		if db.Description != nil {
+			database.Description = *db.Description
+		}
+
+		// List tables in the database
+		listTablesInput := &athena.ListTableMetadataInput{
+			CatalogName:  &catalogName,
+			DatabaseName: db.Name,
+		}
+		
+		tablesResult, err := athenaClient.ListTableMetadata(listTablesInput)
+		if err != nil {
+			// Continue even if we can't list tables for this database
+			databases = append(databases, database)
+			continue
+		}
+
+		for _, table := range tablesResult.TableMetadataList {
+			catalogTable := CatalogTable{
+				Name:    *table.Name,
+				Type:    "",
+				Columns: []Column{},
+			}
+			
+			if table.TableType != nil {
+				catalogTable.Type = *table.TableType
+			}
+			
+			if table.Parameters != nil {
+				if location, ok := table.Parameters["location"]; ok {
+					catalogTable.Location = *location
+				}
+				if inputFormat, ok := table.Parameters["inputformat"]; ok {
+					catalogTable.InputFormat = *inputFormat
+				}
+			}
+
+			// Add columns
+			for _, col := range table.Columns {
+				column := Column{
+					Name: *col.Name,
+					Type: *col.Type,
+				}
+				catalogTable.Columns = append(catalogTable.Columns, column)
+			}
+
+			database.Tables = append(database.Tables, catalogTable)
+		}
+
+		databases = append(databases, database)
+	}
+
+	return &AthenaCatalog{
+		Databases: databases,
+	}, nil
 }
 

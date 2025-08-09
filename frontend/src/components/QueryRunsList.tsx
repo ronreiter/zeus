@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { IconTrash, IconRefresh } from '@tabler/icons-react'
+import { IconTrash, IconRefresh, IconLoader } from '@tabler/icons-react'
 import { queryApi } from '../api'
 
 interface QueryRunsListProps {
   queryId?: string
+  onRunClick?: (executionId: string) => void
 }
 
-export default function QueryRunsList({ queryId }: QueryRunsListProps) {
+export default function QueryRunsList({ queryId, onRunClick }: QueryRunsListProps) {
   const [hoveredRun, setHoveredRun] = useState<string | null>(null)
 
   const { data: queryRuns = [], refetch, isLoading } = useQuery({
@@ -15,17 +16,17 @@ export default function QueryRunsList({ queryId }: QueryRunsListProps) {
     queryFn: () => queryId ? queryApi.getQueryRuns(queryId).then(res => res.data) : Promise.resolve([]),
     enabled: !!queryId,
     refetchInterval: 5000, // Refetch every 5 seconds to update status
+    staleTime: 0, // Always consider data stale to ensure fresh fetches
+    refetchOnWindowFocus: true, // Refetch when window regains focus
   })
 
   const handleDeleteRun = async (e: React.MouseEvent, runId: string) => {
     e.stopPropagation()
-    if (confirm('Are you sure you want to delete this query run?')) {
-      try {
-        await queryApi.deleteQueryRun(runId)
-        refetch()
-      } catch (error) {
-        console.error('Failed to delete query run:', error)
-      }
+    try {
+      await queryApi.deleteQueryRun(runId)
+      refetch()
+    } catch (error) {
+      console.error('Failed to delete query run:', error)
     }
   }
 
@@ -85,18 +86,27 @@ export default function QueryRunsList({ queryId }: QueryRunsListProps) {
             Execute the query to see results.
           </div>
         ) : (
-          <div className="space-y-2 p-4">
+          <div className="divide-y divide-gray-200">
             {queryRuns.map((run) => (
               <div
                 key={run.id}
-                className="group p-3 rounded-lg border border-gray-200 hover:border-gray-300"
+                className="group px-4 py-3 hover:bg-gray-50 cursor-pointer"
                 onMouseEnter={() => setHoveredRun(run.id)}
                 onMouseLeave={() => setHoveredRun(null)}
+                onClick={() => onRunClick?.(run.executionId)}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(run.status)}`}>
-                    {run.status}
-                  </span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(run.status)}`}>
+                      {run.status === 'RUNNING' && (
+                        <IconLoader size={12} className="mr-1 animate-spin" />
+                      )}
+                      {run.status}
+                    </span>
+                    <div className="text-xs text-gray-500">
+                      {new Date(run.executedAt).toLocaleString()}
+                    </div>
+                  </div>
                   
                   {hoveredRun === run.id && (
                     <button
@@ -107,10 +117,6 @@ export default function QueryRunsList({ queryId }: QueryRunsListProps) {
                       <IconTrash size={14} />
                     </button>
                   )}
-                </div>
-                
-                <div className="text-xs text-gray-500 mb-2">
-                  {new Date(run.executedAt).toLocaleString()}
                 </div>
                 
                 {run.errorMessage && (

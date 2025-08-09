@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { IconPlus, IconTrash, IconBolt } from '@tabler/icons-react'
+import { useQuery } from '@tanstack/react-query'
+import { IconPlus, IconTrash, IconBolt, IconDatabase, IconTable, IconChevronDown, IconChevronRight } from '@tabler/icons-react'
 import type { Query } from '../types'
 import { queryApi } from '../api'
 import { useDarkMode } from '../contexts/DarkModeContext'
@@ -14,6 +15,13 @@ interface SidebarProps {
 export default function Sidebar({ queries, onQuerySelect, onNewQuery, refetchQueries }: SidebarProps) {
   const { isDarkMode } = useDarkMode()
   const [hoveredQuery, setHoveredQuery] = useState<string | null>(null)
+  const [expandedDatabases, setExpandedDatabases] = useState<Set<string>>(new Set())
+
+  const { data: catalog } = useQuery({
+    queryKey: ['athenaCatalog'],
+    queryFn: () => queryApi.getAthenaCatalog().then(res => res.data),
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  })
 
   const handleDeleteQuery = async (e: React.MouseEvent, queryId: string) => {
     e.stopPropagation()
@@ -25,6 +33,18 @@ export default function Sidebar({ queries, onQuerySelect, onNewQuery, refetchQue
         console.error('Failed to delete query:', error)
       }
     }
+  }
+
+  const toggleDatabaseExpanded = (databaseName: string) => {
+    setExpandedDatabases(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(databaseName)) {
+        newSet.delete(databaseName)
+      } else {
+        newSet.add(databaseName)
+      }
+      return newSet
+    })
   }
 
   return (
@@ -58,7 +78,10 @@ export default function Sidebar({ queries, onQuerySelect, onNewQuery, refetchQue
       </div>
 
       <div className="flex-1 overflow-auto">
-        <div className="p-4">
+        {/* Queries Section */}
+        <div className={`p-4 border-b transition-colors ${
+          isDarkMode ? 'border-gray-700' : 'border-gray-200'
+        }`}>
           <h2 className={`text-sm font-medium mb-3 transition-colors ${
             isDarkMode ? 'text-gray-300' : 'text-gray-700'
           }`}>Queries</h2>
@@ -112,6 +135,98 @@ export default function Sidebar({ queries, onQuerySelect, onNewQuery, refetchQue
               }`}>
                 No saved queries yet.<br />
                 Create your first query to get started.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Data Catalog Section */}
+        <div className="p-4">
+          <h2 className={`text-sm font-medium mb-3 transition-colors ${
+            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+          }`}>Data Catalog</h2>
+          <div className="space-y-1">
+            {catalog?.databases.map((database) => (
+              <div key={database.name} className="space-y-1">
+                <div
+                  className={`flex items-center p-2 rounded-lg cursor-pointer transition-colors ${
+                    isDarkMode 
+                      ? 'hover:bg-gray-700' 
+                      : 'hover:bg-gray-100'
+                  }`}
+                  onClick={() => toggleDatabaseExpanded(database.name)}
+                >
+                  <div className="flex items-center space-x-2 flex-1">
+                    {expandedDatabases.has(database.name) ? (
+                      <IconChevronDown size={16} className={`transition-colors ${
+                        isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                      }`} />
+                    ) : (
+                      <IconChevronRight size={16} className={`transition-colors ${
+                        isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                      }`} />
+                    )}
+                    <IconDatabase size={16} className={`transition-colors ${
+                      isDarkMode ? 'text-blue-400' : 'text-blue-600'
+                    }`} />
+                    <span className={`text-sm font-medium truncate transition-colors ${
+                      isDarkMode ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      {database.name}
+                    </span>
+                  </div>
+                </div>
+                
+                {expandedDatabases.has(database.name) && (
+                  <div className="ml-6 space-y-1">
+                    {database.tables.map((table) => (
+                      <div
+                        key={`${database.name}.${table.name}`}
+                        className={`flex items-center p-2 rounded-lg cursor-pointer transition-colors ${
+                          isDarkMode 
+                            ? 'hover:bg-gray-700' 
+                            : 'hover:bg-gray-100'
+                        }`}
+                        title={`${database.name}.${table.name} (${table.type})`}
+                      >
+                        <div className="flex items-center space-x-2 flex-1">
+                          <IconTable size={14} className={`transition-colors ${
+                            isDarkMode ? 'text-green-400' : 'text-green-600'
+                          }`} />
+                          <span className={`text-xs truncate transition-colors ${
+                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                          }`}>
+                            {table.name}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {database.tables.length === 0 && (
+                      <div className={`text-xs text-center py-2 ml-6 transition-colors ${
+                        isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                      }`}>
+                        No tables found
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+            
+            {!catalog && (
+              <div className={`text-sm text-center py-4 transition-colors ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}>
+                Loading data catalog...
+              </div>
+            )}
+            
+            {catalog?.databases.length === 0 && (
+              <div className={`text-sm text-center py-4 transition-colors ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}>
+                No databases found in catalog
               </div>
             )}
           </div>

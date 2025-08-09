@@ -25,6 +25,8 @@ export interface QueryResults {
   total: number;
   page: number;
   size: number;
+  status: 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED';
+  errorMessage?: string;
 }
 
 export interface OpenQuery {
@@ -34,4 +36,27 @@ export interface OpenQuery {
   description: string;
   isUnsaved: boolean;
   isDirty: boolean;
+}
+
+export interface Column {
+  name: string;
+  type: string;
+}
+
+export interface CatalogTable {
+  name: string;
+  type: string;
+  columns: Column[];
+  location?: string;
+  inputFormat?: string;
+}
+
+export interface CatalogDatabase {
+  name: string;
+  description?: string;
+  tables: CatalogTable[];
+}
+
+export interface AthenaCatalog {
+  databases: CatalogDatabase[];
 }

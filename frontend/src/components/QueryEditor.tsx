@@ -11,6 +11,7 @@ import 'ace-builds/src-noconflict/theme-github'
 import 'ace-builds/src-noconflict/theme-monokai'
 import 'ace-builds/src-noconflict/ext-language_tools'
 import ace from 'ace-builds/src-noconflict/ace'
+import '../themes/monokai-blue.js'
 
 // Set ace base path to fix dynamic loading issues
 ace.config.set('basePath', '/node_modules/ace-builds/src-noconflict/')
@@ -94,7 +95,7 @@ export default function QueryEditor({ query, onQueryUpdate, onQuerySave, onQuery
         <AceEditor
           ref={aceEditorRef}
           mode="sql"
-          theme={isDarkMode ? "monokai" : "github"}
+          theme={isDarkMode ? "monokai-blue" : "github"}
           value={query.sql}
           onChange={handleSQLChange}
           name="sql-editor"
