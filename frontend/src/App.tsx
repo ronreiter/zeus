@@ -143,7 +143,7 @@ function AppContent() {
   }, [openQueries, navigate])
 
   const createQueryFromTable = useCallback((databaseName: string, tableName: string) => {
-    const sql = `SELECT * FROM ${databaseName}.${tableName} LIMIT 100;`
+    const sql = `SELECT * FROM "${databaseName}"."${tableName}" LIMIT 100;`
     const newQuery: OpenQuery = {
       name: `Query ${tableName}`,
       sql: sql,
