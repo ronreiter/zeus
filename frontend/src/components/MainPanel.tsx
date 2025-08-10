@@ -6,7 +6,7 @@ import QueryTabs from './QueryTabs'
 import QueryEditor from './QueryEditor'
 import QueryRunsList from './QueryRunsList'
 import ResultsPanel from './ResultsPanel'
-import { useDarkMode } from '../contexts/DarkModeContext'
+import { useDarkMode } from '../hooks/useDarkMode'
 
 interface MainPanelProps {
   openQueries: OpenQuery[]
@@ -32,6 +32,7 @@ export default function MainPanel({
   const [currentExecutionId, setCurrentExecutionId] = useState<string | null>(null)
   const [resultsKey, setResultsKey] = useState(0)
   const [initialParameters, setInitialParameters] = useState<Record<string, string> | undefined>()
+  const [currentExecutionParameters, setCurrentExecutionParameters] = useState<Record<string, string> | undefined>()
 
   const activeQuery = openQueries[activeQueryIndex]
 
@@ -40,11 +41,17 @@ export default function MainPanel({
     setCurrentExecutionId(null)
     setResultsKey(prev => prev + 1)
     setInitialParameters(undefined)
+    setCurrentExecutionParameters(undefined)
   }, [activeQueryIndex])
 
   const handleQueryExecute = (executionId: string) => {
     setCurrentExecutionId(executionId)
     setResultsKey(prev => prev + 1) // Force re-render of results
+    
+    // Clear initial parameters since this is a fresh execution, not a historical run replay
+    setInitialParameters(undefined)
+    // Clear current execution parameters - they'll be updated when QueryRunsList provides new data
+    setCurrentExecutionParameters(undefined)
     
     // Immediately invalidate and refetch query runs to show the new run
     if (activeQuery.id) {
@@ -62,8 +69,10 @@ export default function MainPanel({
     }
     onQueryUpdate(activeQueryIndex, updates)
     
-    // Set initial parameters for the editor
+    // Set initial parameters for the editor - these should only be used for this specific historical run
     setInitialParameters(queryRun.parameters || {})
+    // Also set current execution parameters for the results panel
+    setCurrentExecutionParameters(queryRun.parameters)
   }
 
   const handleStatusChange = () => {
@@ -76,6 +85,17 @@ export default function MainPanel({
   const handleCloseResults = () => {
     setCurrentExecutionId(null)
     setResultsKey(prev => prev + 1)
+    setCurrentExecutionParameters(undefined)
+  }
+
+  const handleQueryRunsUpdate = (runs: QueryRun[]) => {
+    // When query runs update, find parameters for current execution if we don't have them yet
+    if (currentExecutionId && !currentExecutionParameters) {
+      const currentRun = runs.find(run => run.executionId === currentExecutionId)
+      if (currentRun?.parameters) {
+        setCurrentExecutionParameters(currentRun.parameters)
+      }
+    }
   }
 
   if (!activeQuery) {
@@ -141,7 +161,11 @@ export default function MainPanel({
           </div>
           
           <div className={`w-80 border-l ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-            <QueryRunsList queryId={activeQuery.id} onRunClick={handleRunClick} />
+            <QueryRunsList 
+              queryId={activeQuery.id} 
+              onRunClick={handleRunClick} 
+              onQueryRunsUpdate={handleQueryRunsUpdate}
+            />
           </div>
         </div>
         
@@ -150,6 +174,7 @@ export default function MainPanel({
             <ResultsPanel 
               key={resultsKey} 
               executionId={currentExecutionId}
+              parameters={currentExecutionParameters}
               onStatusChange={handleStatusChange}
               onClose={handleCloseResults}
             />

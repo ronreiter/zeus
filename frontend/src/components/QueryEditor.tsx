@@ -4,7 +4,7 @@ import { IconDeviceFloppy, IconPlayerPlay, IconCode } from '@tabler/icons-react'
 import { format } from 'sql-formatter'
 import type { OpenQuery } from '../types'
 import { queryApi } from '../api'
-import { useDarkMode } from '../contexts/DarkModeContext'
+import { useDarkMode } from '../hooks/useDarkMode'
 import QueryParameters from './QueryParameters'
 import { extractParameters, validateParameters } from '../utils/queryParameters'
 
@@ -34,6 +34,7 @@ export default function QueryEditor({ query, onQueryUpdate, onQuerySave, onQuery
   const aceEditorRef = useRef<AceEditor>(null)
   const [parameterValues, setParameterValues] = useState<Record<string, string>>({})
   const [errorDialog, setErrorDialog] = useState<{ show: boolean; message: string }>({ show: false, message: '' })
+  const [previousSQL, setPreviousSQL] = useState(query.sql)
   
   // Extract parameters from SQL
   const parameters = extractParameters(query.sql)
@@ -56,15 +57,19 @@ export default function QueryEditor({ query, onQueryUpdate, onQuerySave, onQuery
         const response = await queryApi.executeAthenaQuery(query.sql, parameterValues)
         onQueryExecute(response.data.executionId)
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to execute query:', error)
       
       // Extract error message from the response
       let errorMessage = 'An unknown error occurred while executing the query.'
-      if (error?.response?.data?.error) {
-        errorMessage = error.response.data.error
-      } else if (error?.message) {
-        errorMessage = error.message
+      if (error && typeof error === 'object' && 'response' in error) {
+        const apiError = error as { response?: { data?: { error?: string } } }
+        if (apiError.response?.data?.error) {
+          errorMessage = apiError.response.data.error
+        }
+      } else if (error && typeof error === 'object' && 'message' in error) {
+        const baseError = error as { message: string }
+        errorMessage = baseError.message
       }
       
       setErrorDialog({ show: true, message: errorMessage })
@@ -96,11 +101,32 @@ export default function QueryEditor({ query, onQueryUpdate, onQuerySave, onQuery
   }, [])
 
   useEffect(() => {
-    // Update parameter values when initialParameters change
+    // Update parameter values when initialParameters change (from historical runs)
     if (initialParameters) {
       setParameterValues(initialParameters)
     }
   }, [initialParameters])
+
+  useEffect(() => {
+    // Reset parameter values when SQL changes significantly (new query context)
+    // But preserve them when initialParameters is set (historical run restoration)
+    if (query.sql !== previousSQL && !initialParameters) {
+      const currentParameters = extractParameters(query.sql)
+      const previousParameters = extractParameters(previousSQL)
+      
+      // Check if the parameter structure changed significantly
+      const parameterStructureChanged = 
+        currentParameters.length !== previousParameters.length ||
+        !currentParameters.every(param => previousParameters.includes(param))
+      
+      if (parameterStructureChanged) {
+        // Reset to empty values for new parameter structure
+        setParameterValues({})
+      }
+    }
+    
+    setPreviousSQL(query.sql)
+  }, [query.sql, initialParameters, previousSQL])
 
   useEffect(() => {
     // Add keyboard shortcut for save (Cmd+S / Ctrl+S)

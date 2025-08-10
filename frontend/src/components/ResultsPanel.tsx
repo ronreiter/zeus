@@ -2,15 +2,16 @@ import { useState, useRef, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { IconDownload, IconChevronLeft, IconChevronRight, IconX } from '@tabler/icons-react'
 import { queryApi } from '../api'
-import { useDarkMode } from '../contexts/DarkModeContext'
+import { useDarkMode } from '../hooks/useDarkMode'
 
 interface ResultsPanelProps {
   executionId: string
+  parameters?: Record<string, string>
   onStatusChange?: (oldStatus: string | undefined, newStatus: string) => void
   onClose?: () => void
 }
 
-export default function ResultsPanel({ executionId, onStatusChange, onClose }: ResultsPanelProps) {
+export default function ResultsPanel({ executionId, parameters, onStatusChange, onClose }: ResultsPanelProps) {
   const { isDarkMode } = useDarkMode()
   const [page, setPage] = useState(1)
   const [pageSize] = useState(50)
@@ -123,14 +124,40 @@ export default function ResultsPanel({ executionId, onStatusChange, onClose }: R
         isDarkMode ? 'border-gray-700' : 'border-gray-200'
       }`}>
         <div>
-          <h3 className={`text-sm font-medium transition-colors ${
-            isDarkMode ? 'text-gray-200' : 'text-gray-700'
-          }`}>Query Results</h3>
-          {results && results.status === 'SUCCEEDED' && results.completedAt && (
-            <div className={`text-xs transition-colors ${
-              isDarkMode ? 'text-gray-400' : 'text-gray-500'
-            }`}>
-              Completed: {new Date(results.completedAt).toLocaleString()}
+          <div className="flex items-center space-x-3 mb-1">
+            <h3 className={`text-sm font-medium transition-colors ${
+              isDarkMode ? 'text-gray-200' : 'text-gray-700'
+            }`}>Query Results</h3>
+            
+            {/* Execution date */}
+            {results && results.completedAt && (
+              <div className={`text-xs transition-colors ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}>
+                {new Date(results.completedAt).toLocaleString()}
+              </div>
+            )}
+          </div>
+          
+          {/* Parameters display */}
+          {parameters && Object.keys(parameters).length > 0 && (
+            <div className="flex flex-wrap items-center gap-1 mt-1">
+              <span className={`text-xs transition-colors ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}>Parameters:</span>
+              {Object.entries(parameters).map(([key, value]) => (
+                <span
+                  key={key}
+                  className={`inline-flex items-center px-2 py-0.5 rounded text-xs transition-colors ${
+                    isDarkMode 
+                      ? 'bg-gray-700 text-gray-200 border border-gray-600' 
+                      : 'bg-gray-100 text-gray-700 border border-gray-300'
+                  }`}
+                >
+                  <span className="font-medium">{key}:</span>
+                  <span className="ml-1">{value}</span>
+                </span>
+              ))}
             </div>
           )}
         </div>

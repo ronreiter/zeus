@@ -184,7 +184,7 @@ func getQueryRuns(c *gin.Context) {
 	ctx := context.Background()
 	collection := db.Collection("queryruns")
 
-	opts := options.Find().SetSort(bson.D{{"executedAt", -1}})
+	opts := options.Find().SetSort(bson.D{{Key: "executedAt", Value: -1}})
 	cursor, err := collection.Find(ctx, bson.M{"queryId": queryID}, opts)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -293,7 +293,7 @@ func executeAthenaQuery(c *gin.Context) {
 		return
 	}
 
-	// Substitute parameters in SQL  
+	// Substitute parameters in SQL
 	finalSQL := substituteParameters(req.SQL, req.Parameters)
 
 	executionID, err := executeAthenaQueryInternal(finalSQL)
@@ -331,6 +331,16 @@ func getQueryResults(c *gin.Context) {
 func exportResults(c *gin.Context) {
 	executionID := c.Param("executionId")
 
+	// Find the QueryRun record to get completion timestamp
+	ctx := context.Background()
+	collection := db.Collection("queryruns")
+	var queryRun QueryRun
+	err := collection.FindOne(ctx, bson.M{"executionId": executionID}).Decode(&queryRun)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Query run not found"})
+		return
+	}
+
 	// Get the results S3 URL and proxy the file
 	s3URL, err := getResultsS3URL(executionID)
 	if err != nil {
@@ -338,9 +348,21 @@ func exportResults(c *gin.Context) {
 		return
 	}
 
+	// Generate filename with date
+	var filename string
+	if queryRun.CompletedAt != nil {
+		// Use completion date
+		dateStr := queryRun.CompletedAt.Format("2006-01-02_15-04-05")
+		filename = "query_results_" + dateStr + ".csv"
+	} else {
+		// Fallback to execution date
+		dateStr := queryRun.ExecutedAt.Format("2006-01-02_15-04-05")
+		filename = "query_results_" + dateStr + ".csv"
+	}
+
 	// Set headers for CSV download
 	c.Header("Content-Type", "text/csv")
-	c.Header("Content-Disposition", "attachment; filename=query_results.csv")
+	c.Header("Content-Disposition", "attachment; filename="+filename)
 
 	// Proxy the S3 file to the client
 	err = proxyS3File(c, s3URL)
@@ -359,7 +381,6 @@ func getAthenaCatalog(c *gin.Context) {
 
 	c.JSON(http.StatusOK, catalog)
 }
-
 
 // Helper function to update query run status by checking Athena
 func updateQueryRunStatus(ctx context.Context, collection *mongo.Collection, run QueryRun) (QueryRun, error) {
@@ -381,7 +402,7 @@ func updateQueryRunStatus(ctx context.Context, collection *mongo.Collection, run
 		// Set completion time and error message if applicable
 		if results.Status == "SUCCEEDED" || results.Status == "FAILED" || results.Status == "CANCELLED" {
 			update["$set"].(bson.M)["completedAt"] = now
-			
+
 			// Get S3 URL for successful queries
 			if results.Status == "SUCCEEDED" {
 				s3URL, err := getResultsS3URL(run.ExecutionID)
@@ -389,7 +410,7 @@ func updateQueryRunStatus(ctx context.Context, collection *mongo.Collection, run
 					update["$set"].(bson.M)["resultsS3Url"] = s3URL
 				}
 			}
-			
+
 			// Set error message for failed queries
 			if results.Status == "FAILED" && results.ErrorMessage != nil {
 				update["$set"].(bson.M)["errorMessage"] = *results.ErrorMessage

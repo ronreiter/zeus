@@ -1,16 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { IconTrash, IconRefresh, IconLoader } from '@tabler/icons-react'
 import { queryApi } from '../api'
-import { useDarkMode } from '../contexts/DarkModeContext'
+import { useDarkMode } from '../hooks/useDarkMode'
 import type { QueryRun } from '../types'
 
 interface QueryRunsListProps {
   queryId?: string
   onRunClick?: (queryRun: QueryRun) => void
+  onQueryRunsUpdate?: (queryRuns: QueryRun[]) => void
 }
 
-export default function QueryRunsList({ queryId, onRunClick }: QueryRunsListProps) {
+export default function QueryRunsList({ queryId, onRunClick, onQueryRunsUpdate }: QueryRunsListProps) {
   const { isDarkMode } = useDarkMode()
   const [hoveredRun, setHoveredRun] = useState<string | null>(null)
 
@@ -22,6 +23,13 @@ export default function QueryRunsList({ queryId, onRunClick }: QueryRunsListProp
     staleTime: 0, // Always consider data stale to ensure fresh fetches
     refetchOnWindowFocus: true, // Refetch when window regains focus
   })
+
+  // Notify parent component when query runs data changes
+  useEffect(() => {
+    if (queryRuns.length > 0 && onQueryRunsUpdate) {
+      onQueryRunsUpdate(queryRuns)
+    }
+  }, [queryRuns, onQueryRunsUpdate])
 
   const handleDeleteRun = async (e: React.MouseEvent, runId: string) => {
     e.stopPropagation()
@@ -36,17 +44,17 @@ export default function QueryRunsList({ queryId, onRunClick }: QueryRunsListProp
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'SUCCEEDED':
-        return 'bg-green-100 text-green-800'
+        return isDarkMode ? 'bg-green-900/30 text-green-300' : 'bg-green-100 text-green-800'
       case 'FAILED':
-        return 'bg-red-100 text-red-800'
+        return isDarkMode ? 'bg-red-900/30 text-red-300' : 'bg-red-100 text-red-800'
       case 'RUNNING':
-        return 'bg-blue-100 text-blue-800'
+        return isDarkMode ? 'bg-blue-900/30 text-blue-300' : 'bg-blue-100 text-blue-800'
       case 'QUEUED':
-        return 'bg-blue-100 text-blue-800'  // Same as RUNNING
+        return isDarkMode ? 'bg-blue-900/30 text-blue-300' : 'bg-blue-100 text-blue-800'  // Same as RUNNING
       case 'CANCELLED':
-        return 'bg-gray-100 text-gray-800'
+        return isDarkMode ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100 text-gray-800'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return isDarkMode ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-100 text-gray-800'
     }
   }
 
@@ -130,7 +138,7 @@ export default function QueryRunsList({ queryId, onRunClick }: QueryRunsListProp
                       {(run.status === 'RUNNING' || run.status === 'QUEUED') && (
                         <IconLoader size={12} className="mr-1 animate-spin" />
                       )}
-                      {run.status === 'QUEUED' ? 'Running' : run.status}
+                      {run.status === 'QUEUED' ? 'RUNNING' : run.status}
                     </span>
                     <div className={`text-xs transition-colors ${
                       isDarkMode ? 'text-gray-400' : 'text-gray-500'
