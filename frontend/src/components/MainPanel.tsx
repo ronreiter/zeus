@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { IconPlus, IconSun, IconMoon } from '@tabler/icons-react'
-import type { OpenQuery } from '../types'
+import type { OpenQuery, QueryRun } from '../types'
 import QueryTabs from './QueryTabs'
 import QueryEditor from './QueryEditor'
 import QueryRunsList from './QueryRunsList'
@@ -31,6 +31,7 @@ export default function MainPanel({
   const queryClient = useQueryClient()
   const [currentExecutionId, setCurrentExecutionId] = useState<string | null>(null)
   const [resultsKey, setResultsKey] = useState(0)
+  const [initialParameters, setInitialParameters] = useState<Record<string, string> | undefined>()
 
   const activeQuery = openQueries[activeQueryIndex]
 
@@ -38,6 +39,7 @@ export default function MainPanel({
   useEffect(() => {
     setCurrentExecutionId(null)
     setResultsKey(prev => prev + 1)
+    setInitialParameters(undefined)
   }, [activeQueryIndex])
 
   const handleQueryExecute = (executionId: string) => {
@@ -50,9 +52,18 @@ export default function MainPanel({
     }
   }
 
-  const handleRunClick = (executionId: string) => {
-    setCurrentExecutionId(executionId)
+  const handleRunClick = (queryRun: QueryRun) => {
+    setCurrentExecutionId(queryRun.executionId)
     setResultsKey(prev => prev + 1) // Force re-render of results
+    
+    // Populate the editor with the query run's SQL and parameters
+    const updates: Partial<OpenQuery> = {
+      sql: queryRun.sql
+    }
+    onQueryUpdate(activeQueryIndex, updates)
+    
+    // Set initial parameters for the editor
+    setInitialParameters(queryRun.parameters || {})
   }
 
   const handleStatusChange = () => {
@@ -120,6 +131,7 @@ export default function MainPanel({
               onQueryUpdate={(updates) => onQueryUpdate(activeQueryIndex, updates)}
               onQuerySave={() => onQuerySave(activeQueryIndex)}
               onQueryExecute={handleQueryExecute}
+              initialParameters={initialParameters}
             />
           </div>
           

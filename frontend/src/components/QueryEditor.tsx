@@ -26,9 +26,10 @@ interface QueryEditorProps {
   onQueryUpdate: (updates: Partial<OpenQuery>) => void
   onQuerySave: () => void
   onQueryExecute: (executionId: string) => void
+  initialParameters?: Record<string, string>
 }
 
-export default function QueryEditor({ query, onQueryUpdate, onQuerySave, onQueryExecute }: QueryEditorProps) {
+export default function QueryEditor({ query, onQueryUpdate, onQuerySave, onQueryExecute, initialParameters }: QueryEditorProps) {
   const { isDarkMode } = useDarkMode()
   const aceEditorRef = useRef<AceEditor>(null)
   const [parameterValues, setParameterValues] = useState<Record<string, string>>({})
@@ -93,6 +94,13 @@ export default function QueryEditor({ query, onQueryUpdate, onQuerySave, onQuery
       aceEditorRef.current.editor.focus()
     }
   }, [])
+
+  useEffect(() => {
+    // Update parameter values when initialParameters change
+    if (initialParameters) {
+      setParameterValues(initialParameters)
+    }
+  }, [initialParameters])
 
   return (
     <div className="flex flex-col h-full">

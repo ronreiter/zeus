@@ -3,10 +3,11 @@ import { useQuery } from '@tanstack/react-query'
 import { IconTrash, IconRefresh, IconLoader } from '@tabler/icons-react'
 import { queryApi } from '../api'
 import { useDarkMode } from '../contexts/DarkModeContext'
+import type { QueryRun } from '../types'
 
 interface QueryRunsListProps {
   queryId?: string
-  onRunClick?: (executionId: string) => void
+  onRunClick?: (queryRun: QueryRun) => void
 }
 
 export default function QueryRunsList({ queryId, onRunClick }: QueryRunsListProps) {
@@ -121,7 +122,7 @@ export default function QueryRunsList({ queryId, onRunClick }: QueryRunsListProp
                 }`}
                 onMouseEnter={() => setHoveredRun(run.id)}
                 onMouseLeave={() => setHoveredRun(null)}
-                onClick={() => onRunClick?.(run.executionId)}
+                onClick={() => onRunClick?.(run)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
