@@ -10,8 +10,8 @@ done
 
 echo "LocalStack is ready!"
 
-# Get bucket name from environment variable, default to sentra-zeus-athena-results
-BUCKET_NAME=${ATHENA_RESULTS_BUCKET:-sentra-zeus-athena-results}
+# Get bucket name from environment variable, default to zeus-athena-results
+BUCKET_NAME=${ATHENA_RESULTS_BUCKET:-zeus-athena-results}
 
 # Create S3 bucket for Athena results
 aws --endpoint-url=http://localhost:4566 s3 mb s3://$BUCKET_NAME --region us-east-1

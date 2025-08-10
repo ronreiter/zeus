@@ -141,6 +141,7 @@ tasks:
     dir: "{{.BACKEND_DIR}}"
     env:
       MONGO_URI: mongodb://localhost:27018/zeus
+      AWS_DEFAULT_REGION: us-east-1
       ATHENA_RESULTS_BUCKET: sentra-zeus-athena-results
       AWS_PROFILE: "{{.AWS_PROFILE}}"
       AWS_ACCESS_KEY_ID:
@@ -149,7 +150,6 @@ tasks:
         sh: aws configure export-credentials --format env | grep AWS_SECRET_ACCESS_KEY | cut -d'=' -f2
       AWS_SESSION_TOKEN:
         sh: aws configure export-credentials --format env | grep AWS_SESSION_TOKEN | cut -d'=' -f2
-      AWS_DEFAULT_REGION: us-east-1
     cmds:
       - |
         if command -v air >/dev/null 2>&1; then
@@ -165,9 +165,10 @@ tasks:
   start:backend:no-reload:
     desc: Start backend server locally without auto-reload
     dir: "{{.BACKEND_DIR}}"
+    env_file:
+      - ../prod.env
     env:
       MONGO_URI: mongodb://localhost:27018/zeus
-      ATHENA_RESULTS_BUCKET: sentra-zeus-athena-results
       AWS_PROFILE: "{{.AWS_PROFILE}}"
       AWS_ACCESS_KEY_ID:
         sh: aws configure export-credentials --format env | grep AWS_ACCESS_KEY_ID | cut -d'=' -f2
@@ -175,9 +176,34 @@ tasks:
         sh: aws configure export-credentials --format env | grep AWS_SECRET_ACCESS_KEY | cut -d'=' -f2
       AWS_SESSION_TOKEN:
         sh: aws configure export-credentials --format env | grep AWS_SESSION_TOKEN | cut -d'=' -f2
-      AWS_DEFAULT_REGION: us-east-1
     cmds:
       - go run .
+
+  start:backend:local:
+    desc: Start backend server locally without Docker (requires local MongoDB)
+    dir: "{{.BACKEND_DIR}}"
+    env_file:
+      - ../prod.env
+    env:
+      MONGO_URI: mongodb://localhost:27017/zeus
+      AWS_PROFILE: "{{.AWS_PROFILE}}"
+      AWS_ACCESS_KEY_ID:
+        sh: aws configure export-credentials --format env | grep AWS_ACCESS_KEY_ID | cut -d'=' -f2
+      AWS_SECRET_ACCESS_KEY:
+        sh: aws configure export-credentials --format env | grep AWS_SECRET_ACCESS_KEY | cut -d'=' -f2
+      AWS_SESSION_TOKEN:
+        sh: aws configure export-credentials --format env | grep AWS_SESSION_TOKEN | cut -d'=' -f2
+    cmds:
+      - |
+        if command -v air >/dev/null 2>&1; then
+          air
+        elif command -v nodemon >/dev/null 2>&1; then
+          nodemon --exec "go run ." --ext go
+        else
+          echo "Installing air for auto-reload..."
+          go install github.com/cosmtrek/air@latest
+          air
+        fi
 
   start:frontend:
     desc: Start frontend dev server locally
