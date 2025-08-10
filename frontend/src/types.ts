@@ -2,7 +2,7 @@ export interface Query {
   id: string;
   name: string;
   sql: string;
-  description: string;
+  description?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -35,7 +35,7 @@ export interface OpenQuery {
   id?: string;
   name: string;
   sql: string;
-  description: string;
+  description?: string;
   isUnsaved: boolean;
   isDirty: boolean;
 }

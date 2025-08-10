@@ -50,21 +50,19 @@ export default function QueryTabs({ queries, activeIndex, onActiveChange, onQuer
             </span>
           </button>
           
-          {queries.length > 1 && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onQueryClose(index)
-              }}
-              className={`p-1 rounded transition-colors cursor-pointer ${
-                isDarkMode 
-                  ? 'hover:bg-gray-600' 
-                  : 'hover:bg-gray-200'
-              }`}
-            >
-              <IconX size={14} />
-            </button>
-          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onQueryClose(index)
+            }}
+            className={`p-1 rounded transition-colors cursor-pointer ${
+              isDarkMode 
+                ? 'hover:bg-gray-600' 
+                : 'hover:bg-gray-200'
+            }`}
+          >
+            <IconX size={14} />
+          </button>
         </div>
       ))}
     </div>

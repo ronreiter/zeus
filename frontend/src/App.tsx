@@ -8,30 +8,9 @@ import MainPanel from './components/MainPanel'
 import SaveQueryDialog from './components/SaveQueryDialog'
 import { DarkModeProvider } from './contexts/DarkModeContext'
 import { useDarkMode } from './hooks/useDarkMode'
+import { useLocalStorage } from './hooks/useLocalStorage'
 import { createQueryUrl } from './utils/slug'
 
-const defaultQuery = "WITH sample_sales AS (\n" +
-  "    SELECT *\n" +
-  "    FROM (VALUES\n" +
-  "        --  order_id |   customer   |   order_date    | amount_usd\n" +
-  "        (101,        'Alice',        DATE '2025-08-01',  125.50),\n" +
-  "        (102,        'Bob',          DATE '2025-08-02',   70.00),\n" +
-  "        (103,        'Carol',        DATE '2025-08-02',  200.00),\n" +
-  "        (104,        'Alice',        DATE '2025-08-03',   40.00),\n" +
-  "        (105,        'Dave',         DATE '2025-08-03',  350.00)\n" +
-  "    ) AS t(order_id, customer, order_date, amount_usd)\n" +
-  ")\n" +
-  "\n" +
-  "-- Example analysis: total sales per customer,\n" +
-  "-- only showing customers with > $100 in total purchases\n" +
-  "SELECT\n" +
-  "    customer,\n" +
-  "    ROUND(SUM(amount_usd), 2)      AS total_spend,\n" +
-  "    COUNT(*)                       AS orders_placed\n" +
-  "FROM sample_sales\n" +
-  "GROUP BY customer\n" +
-  "HAVING SUM(amount_usd) > 100\n" +
-  "ORDER BY total_spend DESC;\n"
 
 function QueryEditor() {
   return (
@@ -47,16 +26,8 @@ function AppContent() {
   const { isDarkMode } = useDarkMode()
   const navigate = useNavigate()
   const { queryId } = useParams()
-  const [openQueries, setOpenQueries] = useState<OpenQuery[]>([
-    {
-      name: 'Unsaved Query',
-      sql: defaultQuery,
-      description: '',
-      isUnsaved: true,
-      isDirty: false,
-    },
-  ])
-  const [activeQueryIndex, setActiveQueryIndex] = useState(0)
+  const [openQueries, setOpenQueries] = useLocalStorage<OpenQuery[]>('zeus-open-queries', [])
+  const [activeQueryIndex, setActiveQueryIndex] = useLocalStorage<number>('zeus-active-query-index', -1)
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
   const [saveDialogQueryIndex, setSaveDialogQueryIndex] = useState<number | null>(null)
   const [editQueryId, setEditQueryId] = useState<string | null>(null)
@@ -66,6 +37,24 @@ function AppContent() {
     queryKey: ['queries'],
     queryFn: () => queryApi.getQueries().then(res => res.data),
   })
+
+  // Clean up localStorage queries that no longer exist in the database
+  useEffect(() => {
+    if (queries.length > 0 && openQueries.length > 0) {
+      const existingQueryIds = new Set(queries.map(q => q.id))
+      const validOpenQueries = openQueries.filter(oq => 
+        !oq.id || existingQueryIds.has(oq.id)
+      )
+      
+      if (validOpenQueries.length !== openQueries.length) {
+        setOpenQueries(validOpenQueries)
+        // Adjust activeQueryIndex if it's out of bounds
+        if (activeQueryIndex >= validOpenQueries.length) {
+          setActiveQueryIndex(validOpenQueries.length > 0 ? validOpenQueries.length - 1 : -1)
+        }
+      }
+    }
+  }, [queries, openQueries, activeQueryIndex, setOpenQueries, setActiveQueryIndex])
 
   const openQuery = useCallback((query: Query) => {
     const existingIndex = openQueries.findIndex(q => q.id === query.id)
@@ -162,13 +151,21 @@ function AppContent() {
 
   const closeQuery = useCallback((index: number) => {
     setOpenQueries(prev => prev.filter((_, i) => i !== index))
-    if (activeQueryIndex >= index && activeQueryIndex > 0) {
+    
+    // Update active query index
+    if (openQueries.length === 1) {
+      // Last query being closed, no active query
+      setActiveQueryIndex(-1)
+      navigate('/', { replace: true })
+    } else if (activeQueryIndex === index) {
+      // Active query being closed, select previous or first query
+      const newIndex = index > 0 ? index - 1 : 0
+      setActiveQueryIndex(newIndex)
+    } else if (activeQueryIndex > index) {
+      // Active query is after the closed one, shift index down
       setActiveQueryIndex(prev => prev - 1)
     }
-    if (openQueries.length === 1) {
-      createNewQuery()
-    }
-  }, [activeQueryIndex, openQueries.length, createNewQuery])
+  }, [activeQueryIndex, openQueries.length, navigate])
 
   const updateQuery = useCallback((index: number, updates: Partial<OpenQuery>) => {
     setOpenQueries(prev => prev.map((q, i) => {
