@@ -1,256 +1,667 @@
 # Zeus - Athena Query Sharing Platform
 
-Zeus is a web application that lets users share and execute Amazon Athena queries. Built with Go backend and React TypeScript frontend, it provides a collaborative environment for SQL query development and execution.
+<div align="center">
+  <img src="frontend/public/bolt.svg" alt="Zeus Logo" width="100" height="100">
+  
+  **A modern, collaborative SQL query platform for Amazon Athena**
+  
+  [![Go Version](https://img.shields.io/badge/Go-1.20+-00ADD8?style=flat-square&logo=go)](https://golang.org/)
+  [![React](https://img.shields.io/badge/React-18+-61DAFB?style=flat-square&logo=react)](https://reactjs.org/)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+  [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker)](https://docker.com/)
+</div>
 
-## Features
+## 🚀 Overview
 
-- **Query Management**: Create, save, update, and delete SQL queries
-- **Query Execution**: Execute queries through Amazon Athena
-- **Query History**: Track query runs with execution status and results
-- **Results Visualization**: Display query results in paginated tables
-- **CSV Export**: Export query results to CSV format
-- **Real-time Status**: Monitor query execution status in real-time
-- **Collaborative Interface**: Share queries across team members
+Zeus is a powerful web application that enables teams to collaboratively create, execute, and share SQL queries against Amazon Athena. Built with performance and user experience in mind, Zeus provides a modern interface for data exploration and analytics.
 
-## Architecture
+### ✨ Key Features
+
+- **🔥 Query Management**: Create, save, update, and organize SQL queries with full CRUD operations
+- **⚡ Real-time Execution**: Execute queries through Amazon Athena with live status updates
+- **📊 Smart Results Display**: Paginated results with intelligent column sizing and CSV export
+- **🏷️ Query Organization**: Rename queries inline, track execution history, and manage multiple queries
+- **🌙 Dark Mode Support**: Toggle between light and dark themes for comfortable coding
+- **🔍 Data Catalog Explorer**: Browse databases and tables with search functionality
+- **📱 Responsive Design**: Works seamlessly across desktop and mobile devices
+- **🔄 Auto-save**: Intelligent query state management with unsaved changes tracking
+- **📈 Query History**: Complete execution history with status tracking and error logging
+
+## 🏗️ Architecture
 
 ### Backend (Go)
-- **Framework**: Gin web framework
-- **Database**: MongoDB for query and query run storage
-- **Cloud Integration**: AWS SDK for Athena and S3 operations
-- **API**: RESTful API with JSON responses
+- **Framework**: Gin web framework for high-performance HTTP routing
+- **Database**: MongoDB for persistent storage of queries and execution metadata
+- **Cloud Integration**: AWS SDK v1 for seamless Athena and S3 operations
+- **API Design**: RESTful architecture with structured JSON responses
+- **CORS Support**: Configured for cross-origin requests in development
 
-### Frontend (React TypeScript)
-- **Framework**: React 18 with TypeScript
-- **Styling**: Tailwind CSS
-- **SQL Editor**: ACE Editor with SQL syntax highlighting
-- **Icons**: Tabler Icons
-- **State Management**: TanStack Query (React Query)
-- **Build Tool**: Vite
+### Frontend (React + TypeScript)
+- **Framework**: React 18 with TypeScript for type-safe development
+- **Styling**: Tailwind CSS 4.0 with custom design system
+- **Code Editor**: ACE Editor with SQL syntax highlighting and auto-completion
+- **State Management**: TanStack Query (React Query) for efficient data fetching
+- **Icons**: Tabler Icons for consistent iconography
+- **Build System**: Vite for fast development and optimized production builds
+- **Routing**: React Router v6 with URL-based query state management
 
 ### Infrastructure
-- **Containerization**: Docker and Docker Compose
-- **Local Development**: LocalStack for Athena simulation
-- **Database**: MongoDB container
-- **Reverse Proxy**: Built-in Go server serving static React files in production
+- **Containerization**: Multi-stage Docker builds for optimized deployments
+- **Local Development**: LocalStack for Athena API simulation
+- **Database**: MongoDB 7.0 with persistent volumes
+- **Orchestration**: Docker Compose for development and production environments
+- **Task Runner**: Taskfile for standardized development workflows
+- **Deployment**: Kubernetes Helm charts for production deployments
 
-## Development Setup
+## 📋 Prerequisites
 
-### Prerequisites
-- Docker and Docker Compose
-- [Task](https://taskfile.dev/) - for running development tasks
-- Go 1.20+ (for local development)
-- Node.js 18+ (for local development)
+### Required Software
+- **Docker & Docker Compose**: For containerized development
+- **Task**: Task runner for development commands ([installation guide](https://taskfile.dev/installation/))
+- **AWS CLI**: For credential management and cloud integration
+- **Git**: Version control
 
-### Quick Start with Docker Compose
+### Optional (for local development)
+- **Go 1.20+**: For backend development without containers
+- **Node.js 18+**: For frontend development without containers
+- **MongoDB**: Local database instance
+- **Air**: Go live reload tool (`go install github.com/cosmtrek/air@latest`)
 
-1. **Clone and start the development environment**:
+## 🚀 Quick Start
+
+### 1. Clone and Setup
+
+```bash
+# Clone the repository
+git clone <your-repository-url>
+cd zeus
+
+# Install all dependencies
+task setup
+```
+
+### 2. Development Environment (Recommended)
+
+Start the complete development environment with Docker:
+
+```bash
+# Start development environment with LocalStack simulation
+task dev
+
+# Check that all services are running
+task health:dev
+```
+
+This will start:
+- **Frontend**: http://localhost:3001 (React development server)
+- **Backend**: http://localhost:8081 (Go API server)
+- **MongoDB**: localhost:27018 (Database)
+- **LocalStack**: http://localhost:4567 (AWS services simulation)
+
+### 3. Initialize LocalStack Services
+
+```bash
+# Initialize Athena and S3 services in LocalStack
+task localstack:init
+```
+
+### 4. Test Query Execution
+
+```bash
+# Test with a simple query
+task test:query
+
+# Test with a table query (requires setup)
+task test:query:table
+```
+
+## 🛠️ Development
+
+### Available Development Tasks
+
+```bash
+# View all available tasks
+task --list-all
+
+# Core development tasks
+task dev                 # Start full development environment
+task dev:aws            # Start development with real AWS credentials
+task start:backend      # Start backend with live reload
+task start:frontend     # Start frontend development server
+task build              # Build both frontend and backend
+task clean              # Clean all build artifacts and containers
+```
+
+### Development with Real AWS
+
+For testing against real Athena services:
+
+```bash
+# Generate AWS credentials file
+task aws:env
+
+# Start development environment with real AWS
+task dev:aws
+
+# For blocking mode (logs in foreground)
+task dev:aws-blocking
+```
+
+### Local Development (Without Docker)
+
+1. **Start dependencies**:
    ```bash
-   git clone <repository-url>
-   cd zeus
-   task dev
-   ```
-
-2. **Access the application**:
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8080
-   - MongoDB: localhost:27017
-   - LocalStack: http://localhost:4566
-
-3. **Initialize LocalStack** (in a new terminal):
-   ```bash
+   docker-compose -f docker-compose.dev.yml up mongodb localstack -d
    task localstack:init
    ```
 
-### Local Development Setup
-
-1. **Install dependencies**:
-   ```bash
-   task setup
-   ```
-
-2. **Start backend** (in one terminal):
+2. **Backend** (terminal 1):
    ```bash
    task start:backend
    ```
 
-3. **Start frontend** (in another terminal):
+3. **Frontend** (terminal 2):
    ```bash
    task start:frontend
    ```
 
-4. **Start dependencies**:
-   ```bash
-   docker-compose -f docker-compose.dev.yml up mongodb localstack
-   ```
-
-## Production Deployment
-
-Build and run the production container:
+### Code Quality & Testing
 
 ```bash
+# Run all tests
+task test
+
+# Linting and formatting
+task lint                # Run all linters
+task format             # Format all code
+task lint:backend       # Go-specific linting
+task lint:frontend      # Frontend linting
+```
+
+## 🏗️ How to Use Zeus
+
+### Creating and Managing Queries
+
+1. **New Query**: Click the "+" button or "New Query" to create a new query
+2. **Write SQL**: Use the syntax-highlighted editor to write your query
+3. **Save Query**: Click "Save Query" and provide a meaningful name
+4. **Edit Query Names**: Hover over saved queries in sidebar and click the edit icon
+5. **Multiple Queries**: Work with multiple queries using the tab interface
+
+### Executing Queries
+
+1. **Execute**: Click the "Execute" button to run your query
+2. **Monitor Progress**: Watch real-time status updates (QUEUED → RUNNING → SUCCEEDED/FAILED)
+3. **View Results**: Results appear in the bottom panel with pagination
+4. **Export Data**: Click "Export to CSV" to download results
+5. **Error Handling**: Failed queries show detailed error messages
+
+### Data Exploration
+
+1. **Catalog Browser**: Use the left sidebar to explore databases and tables
+2. **Quick Query**: Click on any table to generate a sample query
+3. **Search Tables**: Use the search box to find specific tables
+4. **Table Details**: Hover over table names to see full names
+
+### Query Organization
+
+- **Query History**: View all executions in the right panel
+- **Status Tracking**: Monitor query status and completion times
+- **Query Sharing**: Share queries by URL using the clean routing system
+- **Dark Mode**: Toggle theme in the user menu
+
+## 🚀 Deployment
+
+### Production Deployment with Docker
+
+```bash
+# Build and start production environment
 task docker:prod
 ```
 
-This creates a single container that:
-1. Builds the React frontend with Vite
-2. Compiles the Go backend
-3. Serves the frontend statically through the Go server
+This creates a single optimized container that:
+- Builds the React frontend with Vite
+- Compiles the Go backend binary
+- Serves frontend assets through the Go server
+- Runs on port 8080
 
-## Available Tasks
+### Docker Compose Production
 
-View all available tasks:
 ```bash
-task --list-all
+# Production deployment with external MongoDB
+docker-compose -f docker-compose.yml up -d
 ```
 
-### Development Tasks
-- `task dev` - Start development environment with Docker
-- `task start:backend` - Start backend server locally
-- `task start:frontend` - Start frontend dev server locally
-- `task build` - Build both frontend and backend
-- `task clean` - Clean build artifacts and Docker resources
+### Kubernetes Deployment
 
-### Testing & Quality
-- `task test` - Run all tests
-- `task lint` - Run linting for all components
-- `task format` - Format code for all components
+Zeus includes Helm charts for Kubernetes deployment:
 
-### Docker Operations
-- `task docker:dev` - Start development environment
-- `task docker:prod` - Start production environment
-- `task docker:logs` - View Docker Compose logs
-- `task docker:down` - Stop Docker services
-- `task docker:clean` - Clean Docker resources
+```bash
+# Navigate to helm directory
+cd helm
 
-### Utilities
-- `task setup` - Install all dependencies
-- `task localstack:init` - Initialize LocalStack services
-- `task db:reset` - Reset MongoDB database
-- `task health` - Check service health
+# Install or upgrade Zeus
+helm install zeus ./zeus -f values-prod.yaml
 
-## API Endpoints
-
-### Queries
-- `GET /api/queries` - List all queries
-- `POST /api/queries` - Create a new query
-- `GET /api/queries/:id` - Get a specific query
-- `PUT /api/queries/:id` - Update a query
-- `DELETE /api/queries/:id` - Delete a query
-
-### Query Runs
-- `GET /api/queries/:id/runs` - Get query runs for a specific query
-- `POST /api/queries/:id/runs` - Execute a query and create a query run
-- `DELETE /api/query-runs/:id` - Delete a query run
-
-### Athena Operations
-- `POST /api/athena/execute` - Execute a query directly
-- `GET /api/athena/results/:executionId` - Get query results with pagination
-- `GET /api/athena/export/:executionId` - Export results as CSV
-
-## Data Models
-
-### Query
-```go
-type Query struct {
-    ID          primitive.ObjectID `json:"id"`
-    Name        string             `json:"name"`
-    SQL         string             `json:"sql"`
-    Description string             `json:"description"`
-    CreatedAt   time.Time          `json:"createdAt"`
-    UpdatedAt   time.Time          `json:"updatedAt"`
-}
+# Or use the install script
+./install.sh
 ```
 
-### Query Run
-```go
-type QueryRun struct {
-    ID           primitive.ObjectID `json:"id"`
-    QueryID      primitive.ObjectID `json:"queryId"`
-    SQL          string             `json:"sql"`
-    ExecutionID  string             `json:"executionId"`
-    Status       string             `json:"status"`
-    ResultsS3URL string             `json:"resultsS3Url"`
-    ErrorMessage string             `json:"errorMessage,omitempty"`
-    ExecutedAt   time.Time          `json:"executedAt"`
-    CompletedAt  *time.Time         `json:"completedAt,omitempty"`
-}
+#### Helm Configuration
+
+Key configuration options in `values.yaml`:
+
+```yaml
+# Scaling
+replicaCount: 3
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+
+# Resources
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# Ingress
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: zeus.yourcompany.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: zeus-tls
+      hosts:
+        - zeus.yourcompany.com
+
+# MongoDB
+mongodb:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 20Gi
 ```
 
-## Environment Variables
+### Environment Variables
 
-### Backend
-- `MONGO_URI`: MongoDB connection string (default: `mongodb://localhost:27017/zeus`)
-- `AWS_ENDPOINT_URL`: AWS endpoint URL for LocalStack
-- `AWS_ACCESS_KEY_ID`: AWS access key
-- `AWS_SECRET_ACCESS_KEY`: AWS secret key
-- `AWS_DEFAULT_REGION`: AWS region (default: `us-east-1`)
-- `PORT`: Server port (default: `8080`)
+#### Backend Configuration
 
-### Frontend
-- `VITE_API_URL`: Backend API URL (default: `http://localhost:8080`)
+```bash
+# Database
+MONGO_URI=mongodb://localhost:27017/zeus
 
-## Development Workflow
+# AWS Configuration
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
+AWS_SESSION_TOKEN=your-session-token  # For temporary credentials
+ATHENA_RESULTS_BUCKET=your-athena-results-bucket
 
-1. **Create a query**: Click "New Query" or the + button in the sidebar
-2. **Write SQL**: Use the ACE editor with syntax highlighting
-3. **Save query**: Click "Save Query" and provide a name
-4. **Execute query**: Click "Execute" to run the query through Athena
-5. **View results**: Results appear in the bottom panel with pagination
-6. **Export results**: Click "Export to CSV" to download results
-7. **Track runs**: View execution history in the right panel
+# Development
+AWS_ENDPOINT_URL=http://localhost:4566  # For LocalStack
 
-## Features in Detail
+# Server
+PORT=8080
+GIN_MODE=release  # For production
+```
 
-### Query Editor
-- SQL syntax highlighting
-- Auto-completion and snippets
-- Real-time query validation
-- Unsaved changes indication with asterisk (*)
+#### Frontend Configuration
+
+```bash
+# API Endpoint
+VITE_API_URL=http://localhost:8080  # Development
+VITE_API_URL=https://zeus.yourcompany.com  # Production
+```
+
+## 📊 API Reference
 
 ### Query Management
-- Save/update queries with names and descriptions
-- Delete queries (with confirmation)
-- Track query modification status
-- Multiple query tabs
 
-### Execution & Results
-- Execute queries through Amazon Athena
-- Real-time status updates (QUEUED, RUNNING, SUCCEEDED, FAILED)
-- Paginated results display
-- CSV export functionality
-- Error message display for failed queries
+```bash
+# List all queries
+GET /api/queries
 
-### Query Runs
-- Execution history for each query
-- Status tracking and timestamps
-- Error logging and display
-- Cleanup operations for old runs
+# Create a new query
+POST /api/queries
+Content-Type: application/json
+{
+  "name": "Customer Analysis",
+  "sql": "SELECT * FROM customers LIMIT 100",
+  "description": "Basic customer data exploration"
+}
 
-## Troubleshooting
+# Get specific query
+GET /api/queries/{id}
 
-### LocalStack Issues
-- Ensure LocalStack container is running: `docker-compose -f docker-compose.dev.yml logs localstack`
-- Check if services are available: `curl http://localhost:4566/_localstack/health`
-- Re-run initialization: `./localstack-init.sh`
+# Update query
+PUT /api/queries/{id}
+Content-Type: application/json
+{
+  "name": "Updated Customer Analysis",
+  "sql": "SELECT name, email FROM customers WHERE active = true",
+  "description": "Updated query for active customers only"
+}
 
-### Database Connection Issues
-- Verify MongoDB is running: `docker-compose -f docker-compose.dev.yml logs mongodb`
-- Check connection string in environment variables
-- Ensure database name matches across services
+# Delete query
+DELETE /api/queries/{id}
+```
 
-### Frontend Build Issues
-- Clear node_modules and reinstall: `rm -rf node_modules package-lock.json && npm install`
-- Check Node.js version compatibility
-- Verify Vite configuration
+### Query Execution
 
-## Contributing
+```bash
+# Execute query directly
+POST /api/athena/execute
+Content-Type: application/json
+{
+  "sql": "SELECT COUNT(*) as total_customers FROM customers"
+}
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Make changes and test thoroughly
-4. Submit a pull request with detailed description
+# Get query results with pagination
+GET /api/athena/results/{executionId}?page=1&pageSize=100
 
-## License
+# Export results as CSV
+GET /api/athena/export/{executionId}
+```
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+### Query Run Management
+
+```bash
+# Get query execution history
+GET /api/queries/{id}/runs
+
+# Create new query run (execute saved query)
+POST /api/queries/{id}/runs
+
+# Delete query run
+DELETE /api/query-runs/{id}
+```
+
+### Data Catalog
+
+```bash
+# Get Athena catalog (databases and tables)
+GET /api/athena/catalog
+
+# Health check
+GET /api/health
+```
+
+## 🗄️ Data Models
+
+### Query Model
+```typescript
+interface Query {
+  id: string;
+  name: string;
+  sql: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+### QueryRun Model
+```typescript
+interface QueryRun {
+  id: string;
+  queryId: string;
+  sql: string;
+  executionId: string;
+  status: 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED';
+  resultsS3Url?: string;
+  errorMessage?: string;
+  executedAt: string;
+  completedAt?: string;
+}
+```
+
+### Database Models
+```typescript
+interface Database {
+  name: string;
+  tables: Table[];
+}
+
+interface Table {
+  name: string;
+  type: string;
+}
+```
+
+## 🔧 Configuration
+
+### AWS Setup
+
+#### IAM Permissions
+Your AWS credentials need the following permissions:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "athena:StartQueryExecution",
+        "athena:GetQueryExecution",
+        "athena:GetQueryResults",
+        "athena:ListDatabases",
+        "athena:ListTableMetadata",
+        "glue:GetDatabases",
+        "glue:GetTables"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": "arn:aws:s3:::your-athena-results-bucket/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket"
+      ],
+      "Resource": "arn:aws:s3:::your-athena-results-bucket"
+    }
+  ]
+}
+```
+
+#### S3 Bucket Setup
+Create an S3 bucket for Athena query results:
+
+```bash
+aws s3 mb s3://your-athena-results-bucket
+aws s3api put-public-access-block \
+  --bucket your-athena-results-bucket \
+  --public-access-block-configuration \
+  BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+```
+
+### MongoDB Configuration
+
+For production MongoDB setup:
+
+```yaml
+# docker-compose.yml
+mongodb:
+  image: mongo:7
+  environment:
+    MONGO_INITDB_ROOT_USERNAME: zeus_admin
+    MONGO_INITDB_ROOT_PASSWORD: secure_password
+    MONGO_INITDB_DATABASE: zeus
+  volumes:
+    - mongodb_data:/data/db
+    - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+```
+
+## 🔍 Monitoring and Observability
+
+### Health Checks
+
+```bash
+# Check all services
+task health:dev
+
+# Individual service checks
+curl http://localhost:8081/api/health
+curl http://localhost:4567/_localstack/health
+curl http://localhost:3001
+```
+
+### Logging
+
+View container logs:
+
+```bash
+# All services
+task docker:logs
+
+# Specific service
+docker-compose -f docker-compose.dev.yml logs -f zeus-backend
+docker-compose -f docker-compose.dev.yml logs -f zeus-frontend
+```
+
+### Metrics
+
+The application provides several monitoring endpoints:
+
+- `/api/health` - Basic health check
+- Database connection status
+- AWS service connectivity
+- Query execution statistics
+
+## 🐛 Troubleshooting
+
+### Common Issues and Solutions
+
+#### LocalStack Connection Issues
+```bash
+# Check if LocalStack is running
+curl http://localhost:4567/_localstack/health
+
+# Restart LocalStack
+docker-compose -f docker-compose.dev.yml restart localstack
+
+# Re-initialize services
+task localstack:init
+```
+
+#### Database Connection Problems
+```bash
+# Check MongoDB status
+docker-compose -f docker-compose.dev.yml logs mongodb
+
+# Reset database
+task db:reset
+
+# Verify connection
+nc -z localhost 27018 && echo "MongoDB is accessible"
+```
+
+#### Frontend Build Issues
+```bash
+# Clear dependencies and rebuild
+cd frontend
+rm -rf node_modules package-lock.json dist
+npm install
+npm run build
+
+# Check for TypeScript errors
+npm run type-check
+```
+
+#### AWS Credential Issues
+```bash
+# Test AWS credentials
+aws sts get-caller-identity
+
+# Regenerate credentials file
+task aws:env
+
+# Check environment variables
+env | grep AWS
+```
+
+#### Query Execution Failures
+1. **Check Athena permissions**: Verify IAM roles include required Athena actions
+2. **S3 bucket access**: Ensure results bucket exists and is accessible
+3. **SQL syntax**: Validate SQL against Athena documentation
+4. **Data source**: Confirm tables exist in Glue Data Catalog
+
+### Performance Optimization
+
+#### Backend Optimization
+- Use connection pooling for MongoDB
+- Implement query result caching
+- Configure appropriate timeout values
+- Monitor goroutine usage
+
+#### Frontend Optimization
+- Implement virtual scrolling for large result sets
+- Use React.memo for expensive components
+- Optimize bundle size with code splitting
+- Cache query results in localStorage
+
+## 🤝 Contributing
+
+We welcome contributions! Please follow these steps:
+
+### Development Setup
+1. **Fork the repository**
+2. **Create feature branch**: `git checkout -b feature/amazing-feature`
+3. **Setup development environment**: `task setup && task dev`
+4. **Make your changes** with proper testing
+5. **Run quality checks**: `task lint && task test`
+6. **Submit pull request** with detailed description
+
+### Code Standards
+- **Go**: Follow Go conventions, use `gofmt`, include tests
+- **TypeScript**: Use strict mode, proper typing, follow ESLint rules
+- **CSS**: Use Tailwind classes, maintain design consistency
+- **Git**: Write clear commit messages, use conventional commits format
+
+### Pull Request Process
+1. Update documentation for significant changes
+2. Add tests for new functionality
+3. Ensure all checks pass (linting, tests, builds)
+4. Request review from maintainers
+5. Address feedback promptly
+
+## 📚 Additional Resources
+
+### Documentation
+- [Amazon Athena Documentation](https://docs.aws.amazon.com/athena/)
+- [React Query Documentation](https://tanstack.com/query/latest)
+- [Go Gin Framework](https://gin-gonic.com/)
+- [Tailwind CSS](https://tailwindcss.com/)
+
+### Tools and Extensions
+- **VS Code Extensions**: Go, TypeScript, Tailwind CSS IntelliSense
+- **Database Tools**: MongoDB Compass, Robo 3T
+- **API Testing**: Postman, curl, httpie
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+<div align="center">
+  Made with ⚡ by the Zeus team
+</div>
