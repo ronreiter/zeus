@@ -197,6 +197,28 @@ task lint:frontend      # Frontend linting
 4. **Export Data**: Click "Export to CSV" to download results
 5. **Error Handling**: Failed queries show detailed error messages
 
+### Using Parameterized Queries
+
+Zeus supports parameterized queries using double curly brace syntax to create reusable, dynamic SQL queries:
+
+1. **Parameter Syntax**: Use `{{parameter_name}}` in your SQL to define parameters
+   ```sql
+   SELECT * FROM customers 
+   WHERE region = '{{region}}' 
+   AND created_date > '{{start_date}}'
+   ```
+
+2. **Parameter Input**: When your query contains parameters, a parameter input panel will automatically appear below the query editor
+
+3. **Dynamic Execution**: Fill in parameter values and execute - the same query can be run with different values without editing the SQL
+
+4. **Parameter Persistence**: Parameter values are saved with query runs for audit trails and re-execution
+
+**Example Use Cases**:
+- Date range queries: `WHERE date BETWEEN '{{start_date}}' AND '{{end_date}}'`
+- Filtering queries: `WHERE status = '{{status}}' AND priority = '{{priority}}'`
+- Dynamic table names: `SELECT * FROM {{table_name}} LIMIT {{limit}}`
+
 ### Data Exploration
 
 1. **Catalog Browser**: Use the left sidebar to explore databases and tables
@@ -367,6 +389,17 @@ Content-Type: application/json
   "sql": "SELECT COUNT(*) as total_customers FROM customers"
 }
 
+# Execute parameterized query
+POST /api/athena/execute
+Content-Type: application/json
+{
+  "sql": "SELECT * FROM customers WHERE region = '{{region}}' AND status = '{{status}}'",
+  "parameters": {
+    "region": "us-east-1",
+    "status": "active"
+  }
+}
+
 # Get query results with pagination
 GET /api/athena/results/{executionId}?page=1&pageSize=100
 
@@ -421,6 +454,7 @@ interface QueryRun {
   status: 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED';
   resultsS3Url?: string;
   errorMessage?: string;
+  parameters?: Record<string, string>; // Parameter values used in execution
   executedAt: string;
   completedAt?: string;
 }
