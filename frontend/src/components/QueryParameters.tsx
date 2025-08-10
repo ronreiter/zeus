@@ -1,4 +1,4 @@
-import { useDarkMode } from '../contexts/DarkModeContext'
+import { useDarkMode } from '../hooks/useDarkMode'
 
 interface QueryParametersProps {
   parameters: string[]

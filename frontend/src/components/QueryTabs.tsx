@@ -1,6 +1,6 @@
 import { IconX } from '@tabler/icons-react'
 import type { OpenQuery } from '../types'
-import { useDarkMode } from '../contexts/DarkModeContext'
+import { useDarkMode } from '../hooks/useDarkMode'
 
 interface QueryTabsProps {
   queries: OpenQuery[]

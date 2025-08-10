@@ -6,7 +6,8 @@ import type { OpenQuery, Query } from './types'
 import Sidebar from './components/Sidebar'
 import MainPanel from './components/MainPanel'
 import SaveQueryDialog from './components/SaveQueryDialog'
-import { DarkModeProvider, useDarkMode } from './contexts/DarkModeContext'
+import { DarkModeProvider } from './contexts/DarkModeContext'
+import { useDarkMode } from './hooks/useDarkMode'
 import { createQueryUrl } from './utils/slug'
 
 const defaultQuery = "WITH sample_sales AS (\n" +

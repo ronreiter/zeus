@@ -72,14 +72,14 @@ func getAthenaResults(executionID string, page, size int) (*QueryResults, error)
 
 	status := *describeResult.QueryExecution.Status.State
 	fmt.Printf("Query %s status: %s\n", executionID, status)
-	
+
 	// If query is not yet complete, return status information without error
 	if status != "SUCCEEDED" {
 		errorMessage := ""
 		if describeResult.QueryExecution.Status.StateChangeReason != nil {
 			errorMessage = *describeResult.QueryExecution.Status.StateChangeReason
 		}
-		
+
 		result := &QueryResults{
 			Columns: []string{},
 			Rows:    [][]string{},
@@ -88,11 +88,11 @@ func getAthenaResults(executionID string, page, size int) (*QueryResults, error)
 			Size:    size,
 			Status:  status,
 		}
-		
+
 		if errorMessage != "" {
 			result.ErrorMessage = &errorMessage
 		}
-		
+
 		return result, nil
 	}
 
@@ -152,7 +152,6 @@ func getAthenaResults(executionID string, page, size int) (*QueryResults, error)
 	}, nil
 }
 
-
 func getResultsS3URL(executionID string) (string, error) {
 	// Get query execution details
 	describeInput := &athena.GetQueryExecutionInput{
@@ -200,16 +199,16 @@ func proxyS3File(c *gin.Context, s3URL string) error {
 
 func fetchAthenaCatalog() (*AthenaCatalog, error) {
 	var databases []CatalogDatabase
-	
+
 	// For now, let's focus on the default 'AwsDataCatalog'
 	// In a production environment, you'd iterate through all catalogs
 	catalogName := "AwsDataCatalog"
-	
+
 	// List databases in the default catalog
 	listDatabasesInput := &athena.ListDatabasesInput{
 		CatalogName: &catalogName,
 	}
-	
+
 	databasesResult, err := athenaClient.ListDatabases(listDatabasesInput)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list databases: %v", err)
@@ -221,7 +220,7 @@ func fetchAthenaCatalog() (*AthenaCatalog, error) {
 			Description: "",
 			Tables:      []CatalogTable{},
 		}
-		
+
 		if db.Description != nil {
 			database.Description = *db.Description
 		}
@@ -231,7 +230,7 @@ func fetchAthenaCatalog() (*AthenaCatalog, error) {
 			CatalogName:  &catalogName,
 			DatabaseName: db.Name,
 		}
-		
+
 		tablesResult, err := athenaClient.ListTableMetadata(listTablesInput)
 		if err != nil {
 			// Continue even if we can't list tables for this database
@@ -245,11 +244,11 @@ func fetchAthenaCatalog() (*AthenaCatalog, error) {
 				Type:    "",
 				Columns: []Column{},
 			}
-			
+
 			if table.TableType != nil {
 				catalogTable.Type = *table.TableType
 			}
-			
+
 			if table.Parameters != nil {
 				if location, ok := table.Parameters["location"]; ok && location != nil {
 					catalogTable.Location = *location
@@ -278,4 +277,3 @@ func fetchAthenaCatalog() (*AthenaCatalog, error) {
 		Databases: databases,
 	}, nil
 }
-

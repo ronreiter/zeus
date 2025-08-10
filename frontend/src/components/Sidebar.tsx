@@ -17,7 +17,7 @@ import {
 } from '@tabler/icons-react'
 import type { Query } from '../types'
 import { queryApi } from '../api'
-import { useDarkMode } from '../contexts/DarkModeContext'
+import { useDarkMode } from '../hooks/useDarkMode'
 
 interface SidebarProps {
   queries: Query[]

@@ -202,6 +202,23 @@ tasks:
     cmds:
       - npm run lint
 
+  lint-fix:
+    desc: Run linting with auto-fix for all components
+    deps: [lint-fix:backend, lint-fix:frontend]
+
+  lint-fix:backend:
+    desc: Run Go linting with auto-fix
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - go vet ./...
+      - go fmt ./...
+
+  lint-fix:frontend:
+    desc: Run frontend linting with auto-fix
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run lint -- --fix
+
   format:
     desc: Format code for all components
     deps: [format:backend, format:frontend]

@@ -47,19 +47,19 @@ func main() {
 	api := r.Group("/api")
 	{
 		api.GET("/health", healthCheck)
-		
+
 		// Query routes
 		api.GET("/queries", getQueries)
 		api.POST("/queries", createQuery)
 		api.GET("/queries/:id", getQuery)
 		api.PUT("/queries/:id", updateQuery)
 		api.DELETE("/queries/:id", deleteQuery)
-		
+
 		// Query run routes
 		api.GET("/queries/:id/runs", getQueryRuns)
 		api.POST("/queries/:id/runs", executeQuery)
 		api.DELETE("/query-runs/:id", deleteQueryRun)
-		
+
 		// Athena routes
 		api.POST("/athena/execute", executeAthenaQuery)
 		api.GET("/athena/results/:executionId", getQueryResults)
@@ -88,7 +88,7 @@ func initMongoDB() error {
 	}
 
 	clientOptions := options.Client().ApplyURI(mongoURI)
-	
+
 	var err error
 	mongoClient, err = mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
