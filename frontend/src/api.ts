@@ -15,11 +15,12 @@ export const queryApi = {
   deleteQuery: (id: string) => api.delete(`/queries/${id}`),
   
   getQueryRuns: (queryId: string) => api.get<QueryRun[]>(`/queries/${queryId}/runs`),
-  executeQuery: (queryId: string, sql: string) =>
-    api.post<QueryRun>(`/queries/${queryId}/runs`, { sql }),
+  executeQuery: (queryId: string, sql: string, parameters?: Record<string, string>) =>
+    api.post<QueryRun>(`/queries/${queryId}/runs`, { sql, parameters }),
   deleteQueryRun: (id: string) => api.delete(`/query-runs/${id}`),
   
-  executeAthenaQuery: (sql: string) => api.post<{ executionId: string }>('/athena/execute', { sql }),
+  executeAthenaQuery: (sql: string, parameters?: Record<string, string>) => 
+    api.post<{ executionId: string }>('/athena/execute', { sql, parameters }),
   getQueryResults: (executionId: string, page: number = 1, size: number = 50) =>
     api.get<QueryResults>(`/athena/results/${executionId}?page=${page}&size=${size}`),
   exportResults: (executionId: string) =>

@@ -13,7 +13,7 @@ export default function ResultsPanel({ executionId, onStatusChange }: ResultsPan
   const { isDarkMode } = useDarkMode()
   const [page, setPage] = useState(1)
   const [pageSize] = useState(50)
-  const previousStatusRef = useRef<string | undefined>()
+  const previousStatusRef = useRef<string | undefined>(undefined)
   const [startTime, setStartTime] = useState<Date | null>(null)
   const [elapsedTime, setElapsedTime] = useState(0)
 
@@ -220,7 +220,7 @@ export default function ResultsPanel({ executionId, onStatusChange }: ResultsPan
               Query {results.status.toLowerCase()}: {results.errorMessage || 'No details available'}
             </div>
           </div>
-        ) : results && results.status === 'SUCCEEDED' && results.columns.length > 0 ? (
+        ) : results && results.status === 'SUCCEEDED' && results.columns?.length > 0 && results.rows?.length > 0 ? (
           <div className="overflow-auto">
             <table className={`min-w-full divide-y transition-colors ${
               isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
@@ -229,7 +229,7 @@ export default function ResultsPanel({ executionId, onStatusChange }: ResultsPan
                 isDarkMode ? 'bg-gray-900' : 'bg-gray-50'
               }`}>
                 <tr>
-                  {results.columns.map((column, index) => (
+                  {results.columns?.map((column, index) => (
                     <th
                       key={index}
                       className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap transition-colors ${
@@ -246,7 +246,7 @@ export default function ResultsPanel({ executionId, onStatusChange }: ResultsPan
                   ? 'bg-gray-800 divide-gray-700' 
                   : 'bg-white divide-gray-200'
               }`}>
-                {results.rows.map((row, rowIndex) => (
+                {results.rows?.map((row, rowIndex) => (
                   <tr key={rowIndex} className={`transition-colors ${
                     isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
                   }`}>

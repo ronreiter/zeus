@@ -1,7 +1,16 @@
 import { useState } from 'react'
 import React from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { IconPlus, IconTrash, IconBolt, IconDatabase, IconTable, IconChevronDown, IconChevronRight, IconSearch } from '@tabler/icons-react'
+import {
+  IconPlus,
+  IconTrash,
+  IconDatabase,
+  IconTable,
+  IconChevronDown,
+  IconChevronRight,
+  IconSearch,
+  IconBoltFilled
+} from '@tabler/icons-react'
 import type { Query } from '../types'
 import { queryApi } from '../api'
 import { useDarkMode } from '../contexts/DarkModeContext'
@@ -99,8 +108,8 @@ export default function Sidebar({ queries, onQuerySelect, onNewQuery, onTableCli
       }`}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
-            <IconBolt className={`transition-colors ${
-              isDarkMode ? 'text-blue-400' : 'text-blue-600'
+            <IconBoltFilled className={`transition-colors ${
+              isDarkMode ? 'text-orange-400' : 'text-orange-600'
             }`} size={24} />
             <h1 className={`text-xl font-semibold transition-colors ${
               isDarkMode ? 'text-white' : 'text-gray-900'

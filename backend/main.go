@@ -41,7 +41,7 @@ func main() {
 	// Serve static files in production
 	r.Static("/static", "./frontend/dist")
 	r.StaticFile("/", "./frontend/dist/index.html")
-	r.StaticFile("/bolt.png", "./frontend/dist/bolt.png")
+	r.StaticFile("/bolt.png", "./frontend/dist/assets/bolt.png")
 
 	// API routes
 	api := r.Group("/api")

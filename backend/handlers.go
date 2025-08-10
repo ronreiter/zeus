@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +13,18 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+// Helper function to substitute parameters in SQL
+func substituteParameters(sql string, parameters map[string]string) string {
+	result := sql
+	if parameters != nil {
+		for key, value := range parameters {
+			placeholder := "{{" + key + "}}"
+			result = strings.ReplaceAll(result, placeholder, value)
+		}
+	}
+	return result
+}
 
 // Query handlers
 func getQueries(c *gin.Context) {
@@ -215,8 +228,12 @@ func executeQuery(c *gin.Context) {
 		return
 	}
 
+	// Substitute parameters in SQL
+	finalSQL := substituteParameters(req.SQL, req.Parameters)
+    c.JSON(http.StatusBadRequest, gin.H{"finalSQL": finalSQL})
+
 	// Execute the query through Athena
-	executionID, err := executeAthenaQueryInternal(req.SQL)
+	executionID, err := executeAthenaQueryInternal(finalSQL)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -228,6 +245,7 @@ func executeQuery(c *gin.Context) {
 		SQL:         req.SQL,
 		ExecutionID: executionID,
 		Status:      "QUEUED",
+		Parameters:  req.Parameters,
 		ExecutedAt:  time.Now(),
 	}
 
@@ -276,7 +294,10 @@ func executeAthenaQuery(c *gin.Context) {
 		return
 	}
 
-	executionID, err := executeAthenaQueryInternal(req.SQL)
+	// Substitute parameters in SQL  
+	finalSQL := substituteParameters(req.SQL, req.Parameters)
+
+	executionID, err := executeAthenaQueryInternal(finalSQL)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -339,6 +360,7 @@ func getAthenaCatalog(c *gin.Context) {
 
 	c.JSON(http.StatusOK, catalog)
 }
+
 
 // Helper function to update query run status by checking Athena
 func updateQueryRunStatus(ctx context.Context, collection *mongo.Collection, run QueryRun) (QueryRun, error) {

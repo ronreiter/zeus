@@ -1,0 +1,89 @@
+# Production values for zeus
+replicaCount: 3
+
+image:
+  repository: zeus
+  pullPolicy: Always
+  tag: "v1.0.0"
+
+service:
+  type: LoadBalancer
+  port: 80
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: zeus.yourdomain.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: zeus-tls
+      hosts:
+        - zeus.yourdomain.com
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+mongodb:
+  enabled: true
+  auth:
+    enabled: true
+  persistence:
+    enabled: true
+    size: 50Gi
+
+# AWS Configuration for production
+aws:
+  region: us-east-1
+
+# Environment variables
+env:
+  - name: NODE_ENV
+    value: "production"
+  - name: MONGO_URI
+    value: "mongodb://admin:$(MONGODB_PASSWORD)@zeus-mongodb:27017/zeus?authSource=admin"
+  - name: AWS_REGION
+    value: "us-east-1"
+  - name: PORT
+    value: "8080"
+
+# Production secrets (should be provided externally)
+secret:
+  data:
+    # AWS_ACCESS_KEY_ID: base64-encoded-value
+    # AWS_SECRET_ACCESS_KEY: base64-encoded-value
+    # MONGODB_PASSWORD: base64-encoded-value
+
+nodeSelector:
+  kubernetes.io/os: linux
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - zeus
+        topologyKey: kubernetes.io/hostname

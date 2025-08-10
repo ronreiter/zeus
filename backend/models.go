@@ -16,15 +16,16 @@ type Query struct {
 }
 
 type QueryRun struct {
-	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	QueryID      primitive.ObjectID `bson:"queryId" json:"queryId"`
-	SQL          string             `bson:"sql" json:"sql"`
-	ExecutionID  string             `bson:"executionId" json:"executionId"`
-	Status       string             `bson:"status" json:"status"` // QUEUED, RUNNING, SUCCEEDED, FAILED, CANCELLED
-	ResultsS3URL string             `bson:"resultsS3Url" json:"resultsS3Url"`
-	ErrorMessage string             `bson:"errorMessage,omitempty" json:"errorMessage,omitempty"`
-	ExecutedAt   time.Time          `bson:"executedAt" json:"executedAt"`
-	CompletedAt  *time.Time         `bson:"completedAt,omitempty" json:"completedAt,omitempty"`
+	ID           primitive.ObjectID    `bson:"_id,omitempty" json:"id"`
+	QueryID      primitive.ObjectID    `bson:"queryId" json:"queryId"`
+	SQL          string                `bson:"sql" json:"sql"`
+	ExecutionID  string                `bson:"executionId" json:"executionId"`
+	Status       string                `bson:"status" json:"status"` // QUEUED, RUNNING, SUCCEEDED, FAILED, CANCELLED
+	ResultsS3URL string                `bson:"resultsS3Url" json:"resultsS3Url"`
+	ErrorMessage string                `bson:"errorMessage,omitempty" json:"errorMessage,omitempty"`
+	Parameters   map[string]string     `bson:"parameters,omitempty" json:"parameters,omitempty"`
+	ExecutedAt   time.Time             `bson:"executedAt" json:"executedAt"`
+	CompletedAt  *time.Time            `bson:"completedAt,omitempty" json:"completedAt,omitempty"`
 }
 
 type CreateQueryRequest struct {
@@ -40,7 +41,8 @@ type UpdateQueryRequest struct {
 }
 
 type ExecuteQueryRequest struct {
-	SQL string `json:"sql" binding:"required"`
+	SQL        string            `json:"sql" binding:"required"`
+	Parameters map[string]string `json:"parameters,omitempty"`
 }
 
 type QueryResults struct {

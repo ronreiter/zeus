@@ -15,6 +15,7 @@ export interface QueryRun {
   status: 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED';
   resultsS3Url?: string;
   errorMessage?: string;
+  parameters?: Record<string, string>;
   executedAt: string;
   completedAt?: string;
 }

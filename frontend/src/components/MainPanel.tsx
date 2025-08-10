@@ -55,7 +55,7 @@ export default function MainPanel({
     setResultsKey(prev => prev + 1) // Force re-render of results
   }
 
-  const handleStatusChange = (oldStatus: string | undefined, newStatus: string) => {
+  const handleStatusChange = () => {
     // Force refresh the query runs list when a query completes
     if (activeQuery.id) {
       queryClient.invalidateQueries({ queryKey: ['queryRuns', activeQuery.id] })
@@ -83,7 +83,7 @@ export default function MainPanel({
             <div className="flex items-center space-x-3">
               <button
                 onClick={onNewQuery}
-                className="flex items-center space-x-2 px-3 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+                className="flex items-center space-x-2 px-3 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors cursor-pointer"
                 title="New Query"
               >
                 <IconPlus size={16} />
@@ -91,7 +91,7 @@ export default function MainPanel({
               </button>
               <button
                 onClick={toggleDarkMode}
-                className={`p-2 rounded-md transition-colors ${
+                className={`p-2 rounded-md transition-colors cursor-pointer ${
                   isDarkMode 
                     ? 'text-gray-300 hover:text-white hover:bg-gray-700' 
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'

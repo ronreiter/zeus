@@ -1,0 +1,17 @@
+apiVersion: v2
+name: zeus
+description: A Helm chart for Zeus - Query execution platform with AWS Athena integration
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - zeus
+  - query
+  - athena
+  - analytics
+home: https://github.com/ronreiter/zeus
+sources:
+  - https://github.com/ronreiter/zeus
+maintainers:
+  - name: Zeus Team
+    email: support@example.com

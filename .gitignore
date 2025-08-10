@@ -62,3 +62,4 @@ build/
 dist/
 aws.env
 /backend/zeus-backend
+/backend/zeus

@@ -1,0 +1,107 @@
+{{- if .Values.mongodb.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "zeus.fullname" . }}-mongodb
+  labels:
+    {{- include "zeus.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "zeus.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: database
+  template:
+    metadata:
+      labels:
+        {{- include "zeus.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: database
+    spec:
+      containers:
+        - name: mongodb
+          image: mongo:7.0
+          ports:
+            - name: mongodb
+              containerPort: {{ .Values.mongodb.service.port }}
+              protocol: TCP
+          {{- if .Values.mongodb.auth.enabled }}
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretRef:
+                  name: {{ include "zeus.fullname" . }}-mongodb-secret
+                  key: username
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretRef:
+                  name: {{ include "zeus.fullname" . }}-mongodb-secret
+                  key: password
+          {{- end }}
+          {{- if .Values.mongodb.persistence.enabled }}
+          volumeMounts:
+            - name: mongodb-data
+              mountPath: /data/db
+          {{- end }}
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 250m
+              memory: 256Mi
+      {{- if .Values.mongodb.persistence.enabled }}
+      volumes:
+        - name: mongodb-data
+          persistentVolumeClaim:
+            claimName: {{ include "zeus.fullname" . }}-mongodb-pvc
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "zeus.fullname" . }}-mongodb
+  labels:
+    {{- include "zeus.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.mongodb.service.port }}
+      targetPort: {{ .Values.mongodb.service.port }}
+      protocol: TCP
+      name: mongodb
+  selector:
+    {{- include "zeus.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+{{- if .Values.mongodb.persistence.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "zeus.fullname" . }}-mongodb-pvc
+  labels:
+    {{- include "zeus.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.mongodb.persistence.size }}
+{{- end }}
+{{- if .Values.mongodb.auth.enabled }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "zeus.fullname" . }}-mongodb-secret
+  labels:
+    {{- include "zeus.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+type: Opaque
+data:
+  username: {{ "admin" | b64enc | quote }}
+  password: {{ randAlphaNum 16 | b64enc | quote }}
+{{- end }}
+{{- end }}

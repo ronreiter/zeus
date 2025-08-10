@@ -1,0 +1,101 @@
+# Default values for zeus
+replicaCount: 1
+
+image:
+  repository: zeus
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 2000
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: zeus.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# MongoDB configuration
+mongodb:
+  enabled: true
+  auth:
+    enabled: false
+  persistence:
+    enabled: true
+    size: 8Gi
+  service:
+    port: 27017
+
+# AWS Configuration
+aws:
+  region: us-east-1
+  # AWS credentials should be provided via IAM roles or external secrets
+  # accessKeyId: ""
+  # secretAccessKey: ""
+
+# Environment variables
+env:
+  - name: MONGO_URI
+    value: "mongodb://zeus-mongodb:27017/zeus"
+  - name: AWS_REGION
+    value: "us-east-1"
+  - name: PORT
+    value: "8080"
+
+# ConfigMap data
+configMap:
+  data: {}
+
+# Secret data (base64 encoded)
+secret:
+  data: {}

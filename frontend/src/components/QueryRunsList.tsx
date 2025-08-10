@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { IconTrash, IconRefresh, IconLoader } from '@tabler/icons-react'
 import { queryApi } from '../api'
+import { useDarkMode } from '../contexts/DarkModeContext'
 
 interface QueryRunsListProps {
   queryId?: string
@@ -9,6 +10,7 @@ interface QueryRunsListProps {
 }
 
 export default function QueryRunsList({ queryId, onRunClick }: QueryRunsListProps) {
+  const { isDarkMode } = useDarkMode()
   const [hoveredRun, setHoveredRun] = useState<string | null>(null)
 
   const { data: queryRuns = [], refetch, isLoading } = useQuery({
@@ -49,11 +51,17 @@ export default function QueryRunsList({ queryId, onRunClick }: QueryRunsListProp
 
   if (!queryId) {
     return (
-      <div className="p-4">
+      <div className={`p-4 transition-colors ${
+        isDarkMode ? 'bg-gray-800' : 'bg-white'
+      }`}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-medium text-gray-700">Query Runs</h3>
+          <h3 className={`text-sm font-medium transition-colors ${
+            isDarkMode ? 'text-gray-200' : 'text-gray-700'
+          }`}>Query Runs</h3>
         </div>
-        <div className="text-sm text-gray-500 text-center py-8">
+        <div className={`text-sm text-center py-8 transition-colors ${
+          isDarkMode ? 'text-gray-400' : 'text-gray-500'
+        }`}>
           Save the query to see execution history
         </div>
       </div>
@@ -61,13 +69,23 @@ export default function QueryRunsList({ queryId, onRunClick }: QueryRunsListProp
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-gray-200">
+    <div className={`flex flex-col h-full transition-colors ${
+      isDarkMode ? 'bg-gray-800' : 'bg-white'
+    }`}>
+      <div className={`p-4 border-b transition-colors ${
+        isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'
+      }`}>
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-gray-700">Query Runs</h3>
+          <h3 className={`text-sm font-medium transition-colors ${
+            isDarkMode ? 'text-gray-200' : 'text-gray-700'
+          }`}>Query Runs</h3>
           <button
             onClick={() => refetch()}
-            className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
+            className={`p-1 rounded transition-colors ${
+              isDarkMode 
+                ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' 
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+            }`}
             title="Refresh"
           >
             <IconRefresh size={16} />
@@ -77,20 +95,30 @@ export default function QueryRunsList({ queryId, onRunClick }: QueryRunsListProp
 
       <div className="flex-1 overflow-auto">
         {isLoading ? (
-          <div className="text-sm text-gray-500 text-center py-8">
+          <div className={`text-sm text-center py-8 transition-colors ${
+            isDarkMode ? 'text-gray-400' : 'text-gray-500'
+          }`}>
             Loading runs...
           </div>
         ) : queryRuns.length === 0 ? (
-          <div className="text-sm text-gray-500 text-center py-8">
+          <div className={`text-sm text-center py-8 transition-colors ${
+            isDarkMode ? 'text-gray-400' : 'text-gray-500'
+          }`}>
             No query runs yet.<br />
             Execute the query to see results.
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className={`divide-y transition-colors ${
+            isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
+          }`}>
             {queryRuns.map((run) => (
               <div
                 key={run.id}
-                className="group px-4 py-3 hover:bg-gray-50 cursor-pointer"
+                className={`group px-4 py-3 cursor-pointer transition-colors ${
+                  isDarkMode 
+                    ? 'hover:bg-gray-700' 
+                    : 'hover:bg-gray-50'
+                }`}
                 onMouseEnter={() => setHoveredRun(run.id)}
                 onMouseLeave={() => setHoveredRun(null)}
                 onClick={() => onRunClick?.(run.executionId)}
@@ -103,7 +131,9 @@ export default function QueryRunsList({ queryId, onRunClick }: QueryRunsListProp
                       )}
                       {run.status === 'QUEUED' ? 'Running' : run.status}
                     </span>
-                    <div className="text-xs text-gray-500">
+                    <div className={`text-xs transition-colors ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
                       {new Date(run.executedAt).toLocaleString()}
                     </div>
                   </div>
@@ -111,7 +141,11 @@ export default function QueryRunsList({ queryId, onRunClick }: QueryRunsListProp
                   {hoveredRun === run.id && (
                     <button
                       onClick={(e) => handleDeleteRun(e, run.id)}
-                      className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                      className={`p-1 rounded transition-colors ${
+                        isDarkMode 
+                          ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20' 
+                          : 'text-red-600 hover:text-red-700 hover:bg-red-50'
+                      }`}
                       title="Delete Run"
                     >
                       <IconTrash size={14} />
@@ -120,8 +154,37 @@ export default function QueryRunsList({ queryId, onRunClick }: QueryRunsListProp
                 </div>
                 
                 {run.errorMessage && (
-                  <div className="text-xs text-red-600 bg-red-50 p-2 rounded mt-2">
+                  <div className={`text-xs p-2 rounded mt-2 transition-colors ${
+                    isDarkMode 
+                      ? 'text-red-300 bg-red-900/20' 
+                      : 'text-red-600 bg-red-50'
+                  }`}>
                     {run.errorMessage}
+                  </div>
+                )}
+                
+                {run.parameters && Object.keys(run.parameters).length > 0 && (
+                  <div className="mt-2">
+                    <div className={`text-xs font-medium mb-1 transition-colors ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                    }`}>
+                      Parameters:
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {Object.entries(run.parameters).map(([key, value]) => (
+                        <span
+                          key={key}
+                          className={`inline-flex items-center px-2 py-1 rounded text-xs transition-colors ${
+                            isDarkMode 
+                              ? 'bg-gray-700 text-gray-200 border border-gray-600' 
+                              : 'bg-gray-100 text-gray-700 border border-gray-300'
+                          }`}
+                        >
+                          <span className="font-medium">{key}:</span>
+                          <span className="ml-1">{value}</span>
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
