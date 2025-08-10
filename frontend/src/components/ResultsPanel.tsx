@@ -21,10 +21,7 @@ export default function ResultsPanel({ executionId, parameters, onStatusChange, 
 
   const { data: results, isLoading, error } = useQuery({
     queryKey: ['queryResults', executionId, page, pageSize],
-    queryFn: () => queryApi.getQueryResults(executionId, page, pageSize).then(res => {
-      console.log(`Query ${executionId} status:`, res.data.status, res.data.errorMessage || '')
-      return res.data
-    }),
+    queryFn: () => queryApi.getQueryResults(executionId, page, pageSize).then(res => res.data),
     enabled: !!executionId,
     refetchInterval: (query) => {
       // Poll every 2 seconds if query is still running
@@ -102,11 +99,31 @@ export default function ResultsPanel({ executionId, parameters, onStatusChange, 
   const handleExport = async () => {
     try {
       const response = await queryApi.exportResults(executionId)
-      const blob = new Blob([response.data], { type: 'text/csv' })
+      
+      const blob = response.data // response.data is already a Blob due to responseType: 'blob'
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = 'query_results.csv'
+      
+      // Extract filename from Content-Disposition header, fallback to default
+      let contentDisposition: string | undefined
+      const headers = response.headers
+      if (typeof headers.get === 'function') {
+        // If headers has a get method (Headers object)
+        contentDisposition = (headers.get('content-disposition') || headers.get('Content-Disposition') || undefined) as string | undefined
+      } else {
+        // If headers is a plain object
+        contentDisposition = (headers['content-disposition'] || headers['Content-Disposition']) as string | undefined
+      }
+      let filename = 'query_results.csv'
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename=([^;]+)/)
+        if (filenameMatch) {
+          filename = filenameMatch[1].replace(/"/g, '').trim() // Remove quotes and trim
+        }
+      }
+      a.download = filename
+      
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
