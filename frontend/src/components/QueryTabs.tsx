@@ -34,7 +34,7 @@ export default function QueryTabs({ queries, activeIndex, onActiveChange, onQuer
         >
           <button
             onClick={() => onActiveChange(index)}
-            className="flex items-center space-x-2 mr-2"
+            className="flex items-center space-x-2 mr-2 cursor-pointer"
           >
             <span className={`text-sm font-medium truncate max-w-32 transition-colors ${
               query.isUnsaved 
@@ -56,7 +56,7 @@ export default function QueryTabs({ queries, activeIndex, onActiveChange, onQuer
                 e.stopPropagation()
                 onQueryClose(index)
               }}
-              className={`p-1 rounded transition-colors ${
+              className={`p-1 rounded transition-colors cursor-pointer ${
                 isDarkMode 
                   ? 'hover:bg-gray-600' 
                   : 'hover:bg-gray-200'

@@ -1,15 +1,16 @@
 import { useState, useRef, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { IconDownload, IconChevronLeft, IconChevronRight } from '@tabler/icons-react'
+import { IconDownload, IconChevronLeft, IconChevronRight, IconX } from '@tabler/icons-react'
 import { queryApi } from '../api'
 import { useDarkMode } from '../contexts/DarkModeContext'
 
 interface ResultsPanelProps {
   executionId: string
   onStatusChange?: (oldStatus: string | undefined, newStatus: string) => void
+  onClose?: () => void
 }
 
-export default function ResultsPanel({ executionId, onStatusChange }: ResultsPanelProps) {
+export default function ResultsPanel({ executionId, onStatusChange, onClose }: ResultsPanelProps) {
   const { isDarkMode } = useDarkMode()
   const [page, setPage] = useState(1)
   const [pageSize] = useState(50)
@@ -140,7 +141,7 @@ export default function ResultsPanel({ executionId, onStatusChange }: ResultsPan
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className={`p-1 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+                className={`p-1 rounded disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors ${
                   isDarkMode 
                     ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' 
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -158,7 +159,7 @@ export default function ResultsPanel({ executionId, onStatusChange }: ResultsPan
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className={`p-1 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+                className={`p-1 rounded disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors ${
                   isDarkMode 
                     ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' 
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -169,15 +170,30 @@ export default function ResultsPanel({ executionId, onStatusChange }: ResultsPan
             </div>
           )}
           
-          {results?.status === 'SUCCEEDED' && (
-            <button
-              onClick={handleExport}
-              className="flex items-center space-x-2 px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
-            >
-              <IconDownload size={14} />
-              <span>Export to CSV</span>
-            </button>
-          )}
+          <div className="flex items-center space-x-2">
+            {results?.status === 'SUCCEEDED' && (
+              <button
+                onClick={handleExport}
+                className="flex items-center space-x-2 px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 cursor-pointer"
+              >
+                <IconDownload size={14} />
+                <span>Export to CSV</span>
+              </button>
+            )}
+            {onClose && (
+              <button
+                onClick={onClose}
+                className={`p-1 rounded-md transition-colors cursor-pointer ${
+                  isDarkMode 
+                    ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' 
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+                title="Close Results"
+              >
+                <IconX size={16} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

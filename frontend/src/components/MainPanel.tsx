@@ -73,6 +73,11 @@ export default function MainPanel({
     }
   }
 
+  const handleCloseResults = () => {
+    setCurrentExecutionId(null)
+    setResultsKey(prev => prev + 1)
+  }
+
   if (!activeQuery) {
     return (
       <div className={`flex-1 flex items-center justify-center transition-colors ${
@@ -135,17 +140,18 @@ export default function MainPanel({
             />
           </div>
           
-          <div className="w-80 border-l border-gray-200">
+          <div className={`w-80 border-l ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
             <QueryRunsList queryId={activeQuery.id} onRunClick={handleRunClick} />
           </div>
         </div>
         
         {currentExecutionId && (
-          <div className="border-t border-gray-200">
+          <div className={`border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
             <ResultsPanel 
               key={resultsKey} 
               executionId={currentExecutionId}
               onStatusChange={handleStatusChange}
+              onClose={handleCloseResults}
             />
           </div>
         )}

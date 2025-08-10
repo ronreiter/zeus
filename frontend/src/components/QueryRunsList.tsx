@@ -82,7 +82,7 @@ export default function QueryRunsList({ queryId, onRunClick }: QueryRunsListProp
           }`}>Query Runs</h3>
           <button
             onClick={() => refetch()}
-            className={`p-1 rounded transition-colors ${
+            className={`p-1 rounded transition-colors cursor-pointer ${
               isDarkMode 
                 ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' 
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -142,7 +142,7 @@ export default function QueryRunsList({ queryId, onRunClick }: QueryRunsListProp
                   {hoveredRun === run.id && (
                     <button
                       onClick={(e) => handleDeleteRun(e, run.id)}
-                      className={`p-1 rounded transition-colors ${
+                      className={`p-1 rounded transition-colors cursor-pointer ${
                         isDarkMode 
                           ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20' 
                           : 'text-red-600 hover:text-red-700 hover:bg-red-50'

@@ -102,6 +102,21 @@ export default function QueryEditor({ query, onQueryUpdate, onQuerySave, onQuery
     }
   }, [initialParameters])
 
+  useEffect(() => {
+    // Add keyboard shortcut for save (Cmd+S / Ctrl+S)
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 's') {
+        event.preventDefault()
+        if (canSave) {
+          onQuerySave()
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [canSave, onQuerySave])
+
   return (
     <div className="flex flex-col h-full">
       <div className={`flex items-center justify-between p-4 border-b transition-colors ${

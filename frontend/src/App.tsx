@@ -7,6 +7,7 @@ import Sidebar from './components/Sidebar'
 import MainPanel from './components/MainPanel'
 import SaveQueryDialog from './components/SaveQueryDialog'
 import { DarkModeProvider, useDarkMode } from './contexts/DarkModeContext'
+import { createQueryUrl } from './utils/slug'
 
 const defaultQuery = "WITH sample_sales AS (\n" +
   "    SELECT *\n" +
@@ -36,6 +37,7 @@ function QueryEditor() {
     <Routes>
       <Route path="/" element={<AppContent />} />
       <Route path="/query/:queryId" element={<AppContent />} />
+      <Route path="/query/:queryId/:slug" element={<AppContent />} />
     </Routes>
   )
 }
@@ -67,7 +69,7 @@ function AppContent() {
     const existingIndex = openQueries.findIndex(q => q.id === query.id)
     if (existingIndex !== -1) {
       setActiveQueryIndex(existingIndex)
-      navigate(`/query/${query.id}`)
+      navigate(createQueryUrl(query.id, query.name))
       return
     }
 
@@ -82,7 +84,7 @@ function AppContent() {
 
     setOpenQueries(prev => [...prev, newQuery])
     setActiveQueryIndex(openQueries.length)
-    navigate(`/query/${query.id}`)
+    navigate(createQueryUrl(query.id, query.name))
   }, [openQueries, navigate])
 
   // Handle URL-based query loading
@@ -107,7 +109,8 @@ function AppContent() {
       }
     } else if (!queryId && openQueries.length > 0 && openQueries[activeQueryIndex]?.id && !openQueries[activeQueryIndex]?.isUnsaved) {
       // No queryId in URL but we have an active saved query, update URL
-      navigate(`/query/${openQueries[activeQueryIndex].id}`)
+      const activeQuery = openQueries[activeQueryIndex]
+      navigate(createQueryUrl(activeQuery.id!, activeQuery.name))
     }
   }, [queryId, queries, openQueries, activeQueryIndex, navigate, openQuery])
 
@@ -118,7 +121,7 @@ function AppContent() {
     // Handle URL navigation for saved queries
     const targetQuery = openQueries[index]
     if (targetQuery?.id && !targetQuery?.isUnsaved) {
-      navigate(`/query/${targetQuery.id}`)
+      navigate(createQueryUrl(targetQuery.id, targetQuery.name))
     } else {
       navigate('/')
     }
@@ -178,14 +181,18 @@ function AppContent() {
     }))
   }, [])
 
-  const saveQuery = useCallback((index: number, name: string) => {
-    setSaveDialogOpen(false)
-    setSaveDialogQueryIndex(null)
-
+  const saveQuery = useCallback((index: number, name?: string) => {
     const query = openQueries[index]
     if (!query) return
 
     if (query.isUnsaved) {
+      // For new queries, we need a name, so open the dialog if no name provided
+      if (!name) {
+        setSaveDialogQueryIndex(index)
+        setSaveDialogOpen(true)
+        return
+      }
+      
       queryApi.createQuery({
         name,
         sql: query.sql,
@@ -199,10 +206,18 @@ function AppContent() {
           isDirty: false,
         })
         refetchQueries()
+        setSaveDialogOpen(false)
+        setSaveDialogQueryIndex(null)
+        
+        // Update URL to include the query ID and slug
+        if (index === activeQueryIndex) {
+          navigate(createQueryUrl(savedQuery.id, savedQuery.name))
+        }
       })
     } else {
+      // For existing queries, save directly without asking for name
       queryApi.updateQuery(query.id!, {
-        name,
+        name: query.name, // Use existing name
         sql: query.sql,
         description: query.description,
       }).then((response) => {
@@ -212,21 +227,34 @@ function AppContent() {
           isDirty: false,
         })
         refetchQueries()
+        
+        // Update URL if this is the active query and name might have changed
+        if (index === activeQueryIndex) {
+          navigate(createQueryUrl(savedQuery.id, savedQuery.name))
+        }
       })
     }
-  }, [openQueries, updateQuery, refetchQueries])
+  }, [openQueries, updateQuery, refetchQueries, navigate, activeQueryIndex])
 
-  const openSaveDialog = useCallback((index: number) => {
-    setSaveDialogQueryIndex(index)
-    setSaveDialogOpen(true)
-  }, [])
+  const handleSaveQuery = useCallback((index: number) => {
+    const query = openQueries[index]
+    if (!query) return
+    
+    // If it's an existing query, save directly
+    if (!query.isUnsaved) {
+      saveQuery(index)
+    } else {
+      // If it's a new query, open the save dialog
+      setSaveDialogQueryIndex(index)
+      setSaveDialogOpen(true)
+    }
+  }, [openQueries, saveQuery])
 
   return (
     <div className={`flex h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <Sidebar
         queries={queries}
         onQuerySelect={openQuery}
-        onNewQuery={createNewQuery}
         onTableClick={createQueryFromTable}
         refetchQueries={refetchQueries}
       />
@@ -237,7 +265,7 @@ function AppContent() {
         onActiveQueryChange={handleActiveQueryChange}
         onQueryUpdate={updateQuery}
         onQueryClose={closeQuery}
-        onQuerySave={openSaveDialog}
+        onQuerySave={handleSaveQuery}
         onNewQuery={createNewQuery}
       />
 

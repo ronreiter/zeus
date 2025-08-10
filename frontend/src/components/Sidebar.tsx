@@ -2,14 +2,15 @@ import { useState } from 'react'
 import React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
-  IconPlus,
   IconTrash,
   IconDatabase,
   IconTable,
   IconChevronDown,
   IconChevronRight,
   IconSearch,
-  IconBoltFilled
+  IconBoltFilled,
+  IconChevronsLeft,
+  IconChevronsRight
 } from '@tabler/icons-react'
 import type { Query } from '../types'
 import { queryApi } from '../api'
@@ -18,16 +19,16 @@ import { useDarkMode } from '../contexts/DarkModeContext'
 interface SidebarProps {
   queries: Query[]
   onQuerySelect: (query: Query) => void
-  onNewQuery: () => void
   onTableClick: (databaseName: string, tableName: string) => void
   refetchQueries: () => void
 }
 
-export default function Sidebar({ queries, onQuerySelect, onNewQuery, onTableClick, refetchQueries }: SidebarProps) {
+export default function Sidebar({ queries, onQuerySelect, onTableClick, refetchQueries }: SidebarProps) {
   const { isDarkMode } = useDarkMode()
   const [hoveredQuery, setHoveredQuery] = useState<string | null>(null)
   const [expandedDatabases, setExpandedDatabases] = useState<Set<string>>(new Set())
   const [searchQuery, setSearchQuery] = useState('')
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
   const { data: catalog } = useQuery({
     queryKey: ['athenaCatalog'],
@@ -100,40 +101,67 @@ export default function Sidebar({ queries, onQuerySelect, onNewQuery, onTableCli
   }, [searchQuery, filteredCatalog])
 
   return (
-    <div className={`w-80 border-r flex flex-col transition-colors ${
+    <div className={`${isCollapsed ? 'w-12' : 'w-80'} border-r flex flex-col transition-all duration-300 ${
       isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
     }`}>
       <div className={`p-4 border-b transition-colors ${
         isDarkMode ? 'border-gray-700' : 'border-gray-200'
       }`}>
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <IconBoltFilled className={`transition-colors ${
-              isDarkMode ? 'text-orange-400' : 'text-orange-600'
-            }`} size={24} />
-            <h1 className={`text-xl font-semibold transition-colors ${
-              isDarkMode ? 'text-white' : 'text-gray-900'
-            }`}>Zeus</h1>
-          </div>
-          <button
-            onClick={onNewQuery}
-            className={`p-2 rounded-md transition-colors ${
-              isDarkMode 
-                ? 'text-gray-300 hover:text-white hover:bg-gray-700' 
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-            }`}
-            title="New Query"
-          >
-            <IconPlus size={20} />
-          </button>
+          {!isCollapsed && (
+            <div className="flex items-center space-x-2">
+              <IconBoltFilled className={`transition-colors ${
+                isDarkMode ? 'text-orange-400' : 'text-orange-600'
+              }`} size={24} />
+              <h1 className={`text-xl font-semibold transition-colors ${
+                isDarkMode ? 'text-white' : 'text-gray-900'
+              }`}>Zeus</h1>
+            </div>
+          )}
+          {isCollapsed && (
+            <div className="flex justify-center">
+              <IconBoltFilled className={`transition-colors ${
+                isDarkMode ? 'text-orange-400' : 'text-orange-600'
+              }`} size={20} />
+            </div>
+          )}
+          {!isCollapsed && (
+            <button
+              onClick={() => setIsCollapsed(true)}
+              className={`p-2 rounded-md transition-colors cursor-pointer ${
+                isDarkMode 
+                  ? 'text-gray-300 hover:text-white hover:bg-gray-700' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+              title="Collapse Sidebar"
+            >
+              <IconChevronsLeft size={16} />
+            </button>
+          )}
         </div>
+        {isCollapsed && (
+          <div className="flex justify-center">
+            <button
+              onClick={() => setIsCollapsed(false)}
+              className={`p-2 rounded-md transition-colors cursor-pointer ${
+                isDarkMode 
+                  ? 'text-gray-300 hover:text-white hover:bg-gray-700' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+              title="Expand Sidebar"
+            >
+              <IconChevronsRight size={16} />
+            </button>
+          </div>
+        )}
       </div>
 
-      <div className="flex-1 overflow-auto">
-        {/* Queries Section */}
-        <div className={`p-4 border-b transition-colors ${
-          isDarkMode ? 'border-gray-700' : 'border-gray-200'
-        }`}>
+      {!isCollapsed && (
+        <div className="flex-1 overflow-auto">
+          {/* Queries Section */}
+          <div className={`p-4 border-b transition-colors ${
+            isDarkMode ? 'border-gray-700' : 'border-gray-200'
+          }`}>
           <h2 className={`text-sm font-medium mb-3 transition-colors ${
             isDarkMode ? 'text-gray-300' : 'text-gray-700'
           }`}>Queries</h2>
@@ -167,7 +195,7 @@ export default function Sidebar({ queries, onQuerySelect, onNewQuery, onTableCli
                 
                 <button
                   onClick={(e) => handleDeleteQuery(e, query.id)}
-                  className={`ml-2 p-1 rounded transition-all ${
+                  className={`ml-2 p-1 rounded transition-all cursor-pointer ${
                     hoveredQuery === query.id
                       ? isDarkMode 
                         ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20 opacity-100' 
@@ -305,7 +333,8 @@ export default function Sidebar({ queries, onQuerySelect, onNewQuery, onTableCli
             )}
           </div>
         </div>
-      </div>
+        </div>
+      )}
     </div>
   )
 }
