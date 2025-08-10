@@ -1,14 +1,15 @@
 # Zeus - Athena Query Sharing Platform
 
-<div align="center">
-  <img src="zeus.png" alt="Zeus Logo">
-  
+<div align="center"> 
   **A modern, collaborative SQL query platform for Amazon Athena**
   
   [![Go Version](https://img.shields.io/badge/Go-1.20+-00ADD8?style=flat-square&logo=go)](https://golang.org/)
   [![React](https://img.shields.io/badge/React-18+-61DAFB?style=flat-square&logo=react)](https://reactjs.org/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
   [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker)](https://docker.com/)
+
+  <img src="zeus.png" alt="Zeus Logo">
+
 </div>
 
 ## 🚀 Overview
