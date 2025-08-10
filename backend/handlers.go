@@ -230,7 +230,6 @@ func executeQuery(c *gin.Context) {
 
 	// Substitute parameters in SQL
 	finalSQL := substituteParameters(req.SQL, req.Parameters)
-    c.JSON(http.StatusBadRequest, gin.H{"finalSQL": finalSQL})
 
 	// Execute the query through Athena
 	executionID, err := executeAthenaQueryInternal(finalSQL)
