@@ -141,8 +141,10 @@ tasks:
     dir: "{{.BACKEND_DIR}}"
     env:
       MONGO_URI: mongodb://localhost:27018/zeus
-      AWS_DEFAULT_REGION: us-east-1
-      ATHENA_RESULTS_BUCKET: sentra-zeus-athena-results
+      AWS_DEFAULT_REGION:
+        sh: grep AWS_DEFAULT_REGION ../prod.env | cut -d'=' -f2
+      ATHENA_RESULTS_BUCKET:
+        sh: grep ATHENA_RESULTS_BUCKET ../prod.env | cut -d'=' -f2
       AWS_PROFILE: "{{.AWS_PROFILE}}"
       AWS_ACCESS_KEY_ID:
         sh: aws configure export-credentials --format env | grep AWS_ACCESS_KEY_ID | cut -d'=' -f2

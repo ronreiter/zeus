@@ -138,7 +138,6 @@ function AppContent() {
     const newQuery: OpenQuery = {
       name: `Query ${tableName}`,
       sql: sql,
-      description: `Query to explore ${databaseName}.${tableName}`,
       isUnsaved: true,
       isDirty: false,
     }
