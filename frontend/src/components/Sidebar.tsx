@@ -257,7 +257,7 @@ export default function Sidebar({ queries, onQuerySelect, onTableClick, refetchQ
                   }`}
                   onClick={() => toggleDatabaseExpanded(database.name)}
                 >
-                  <div className="flex items-center space-x-2 flex-1">
+                  <div className="flex items-center space-x-2 flex-1 min-w-0">
                     {expandedDatabases.has(database.name) ? (
                       <IconChevronDown size={16} className={`transition-colors ${
                         isDarkMode ? 'text-gray-400' : 'text-gray-600'
@@ -270,9 +270,10 @@ export default function Sidebar({ queries, onQuerySelect, onTableClick, refetchQ
                     <IconDatabase size={16} className={`transition-colors ${
                       isDarkMode ? 'text-blue-400' : 'text-blue-600'
                     }`} />
-                    <span className={`text-sm font-medium truncate transition-colors ${
+                    <span className={`text-sm font-medium transition-colors overflow-hidden text-ellipsis whitespace-nowrap ${
                       isDarkMode ? 'text-white' : 'text-gray-900'
-                    }`}>
+                    }`}
+                      title={database.name}>
                       {database.name}
                     </span>
                   </div>
@@ -291,13 +292,14 @@ export default function Sidebar({ queries, onQuerySelect, onTableClick, refetchQ
                         title={`Click to query ${database.name}.${table.name} (${table.type})`}
                         onClick={() => onTableClick(database.name, table.name)}
                       >
-                        <div className="flex items-center space-x-2 flex-1">
-                          <IconTable size={14} className={`transition-colors ${
+                        <div className="flex items-center space-x-2 flex-1 min-w-0">
+                          <IconTable size={16} className={`flex-shrink-0 transition-colors ${
                             isDarkMode ? 'text-green-400' : 'text-green-600'
                           }`} />
-                          <span className={`text-xs truncate transition-colors ${
+                          <span className={`text-xs transition-colors overflow-hidden text-ellipsis whitespace-nowrap ${
                             isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                          }`}>
+                          }`}
+                            title={table.name}>
                             {table.name}
                           </span>
                         </div>
