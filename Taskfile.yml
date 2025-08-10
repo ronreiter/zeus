@@ -185,6 +185,12 @@ tasks:
     cmds:
       - npm run dev
 
+  start:infra:
+    desc: Start only infrastructure services (MongoDB and LocalStack) with Docker
+    cmds:
+      - docker-compose -f docker-compose.dev.yml up -d mongodb localstack
+      - echo "Infrastructure services started (MongoDB on port 27018, LocalStack on port 4567)"
+
   lint:
     desc: Run linting for all components
     deps: [lint:backend, lint:frontend]

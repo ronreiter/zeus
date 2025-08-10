@@ -71,7 +71,6 @@ func getAthenaResults(executionID string, page, size int) (*QueryResults, error)
 	}
 
 	status := *describeResult.QueryExecution.Status.State
-	fmt.Printf("Query %s status: %s\n", executionID, status)
 
 	// If query is not yet complete, return status information without error
 	if status != "SUCCEEDED" {
