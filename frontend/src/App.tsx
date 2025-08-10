@@ -58,6 +58,7 @@ function AppContent() {
   const [activeQueryIndex, setActiveQueryIndex] = useState(0)
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
   const [saveDialogQueryIndex, setSaveDialogQueryIndex] = useState<number | null>(null)
+  const [editQueryId, setEditQueryId] = useState<string | null>(null)
   const isUserInitiatedChange = useRef(false)
 
   const { data: queries = [], refetch: refetchQueries } = useQuery({
@@ -69,7 +70,7 @@ function AppContent() {
     const existingIndex = openQueries.findIndex(q => q.id === query.id)
     if (existingIndex !== -1) {
       setActiveQueryIndex(existingIndex)
-      navigate(createQueryUrl(query.id, query.name))
+      navigate(createQueryUrl(query.id, query.name), { replace: true })
       return
     }
 
@@ -84,7 +85,7 @@ function AppContent() {
 
     setOpenQueries(prev => [...prev, newQuery])
     setActiveQueryIndex(openQueries.length)
-    navigate(createQueryUrl(query.id, query.name))
+    navigate(createQueryUrl(query.id, query.name), { replace: true })
   }, [openQueries, navigate])
 
   // Handle URL-based query loading
@@ -121,9 +122,9 @@ function AppContent() {
     // Handle URL navigation for saved queries
     const targetQuery = openQueries[index]
     if (targetQuery?.id && !targetQuery?.isUnsaved) {
-      navigate(createQueryUrl(targetQuery.id, targetQuery.name))
+      navigate(createQueryUrl(targetQuery.id, targetQuery.name), { replace: true })
     } else {
-      navigate('/')
+      navigate('/', { replace: true })
     }
   }, [openQueries, navigate])
 
@@ -139,7 +140,7 @@ function AppContent() {
     setOpenQueries(prev => [...prev, newQuery])
     isUserInitiatedChange.current = true
     setActiveQueryIndex(openQueries.length)
-    navigate('/')
+    navigate('/', { replace: true })
   }, [openQueries, navigate])
 
   const createQueryFromTable = useCallback((databaseName: string, tableName: string) => {
@@ -155,7 +156,7 @@ function AppContent() {
     setOpenQueries(prev => [...prev, newQuery])
     isUserInitiatedChange.current = true
     setActiveQueryIndex(openQueries.length)
-    navigate('/')
+    navigate('/', { replace: true })
   }, [openQueries, navigate])
 
   const closeQuery = useCallback((index: number) => {
@@ -250,12 +251,44 @@ function AppContent() {
     }
   }, [openQueries, saveQuery])
 
+  const handleRenameQuery = useCallback((queryId: string, newName: string) => {
+    const query = queries.find(q => q.id === queryId)
+    if (!query) return
+
+    queryApi.updateQuery(queryId, {
+      name: newName,
+      sql: query.sql,
+      description: query.description,
+    }).then((response) => {
+      const savedQuery = response.data
+      refetchQueries()
+      setEditQueryId(null)
+      
+      // Update any open queries with the same ID
+      setOpenQueries(prev => prev.map(q => 
+        q.id === queryId ? { ...q, name: savedQuery.name } : q
+      ))
+      
+      // Update URL if this is the active query
+      const activeQuery = openQueries[activeQueryIndex]
+      if (activeQuery?.id === queryId) {
+        navigate(createQueryUrl(savedQuery.id, savedQuery.name), { replace: true })
+      }
+    }).catch(error => {
+      console.error('Failed to rename query:', error)
+      setEditQueryId(null)
+    })
+  }, [queries, refetchQueries, openQueries, activeQueryIndex, navigate])
+
   return (
     <div className={`flex h-screen transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <Sidebar
         queries={queries}
         onQuerySelect={openQuery}
         onTableClick={createQueryFromTable}
+        onQueryRename={handleRenameQuery}
+        editQueryId={editQueryId}
+        onEditQueryId={setEditQueryId}
         refetchQueries={refetchQueries}
       />
       

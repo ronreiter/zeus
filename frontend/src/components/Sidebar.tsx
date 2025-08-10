@@ -10,7 +10,10 @@ import {
   IconSearch,
   IconBoltFilled,
   IconChevronsLeft,
-  IconChevronsRight
+  IconChevronsRight,
+  IconEdit,
+  IconCheck,
+  IconX
 } from '@tabler/icons-react'
 import type { Query } from '../types'
 import { queryApi } from '../api'
@@ -20,15 +23,19 @@ interface SidebarProps {
   queries: Query[]
   onQuerySelect: (query: Query) => void
   onTableClick: (databaseName: string, tableName: string) => void
+  onQueryRename: (queryId: string, newName: string) => void
+  editQueryId: string | null
+  onEditQueryId: (queryId: string | null) => void
   refetchQueries: () => void
 }
 
-export default function Sidebar({ queries, onQuerySelect, onTableClick, refetchQueries }: SidebarProps) {
+export default function Sidebar({ queries, onQuerySelect, onTableClick, onQueryRename, editQueryId, onEditQueryId, refetchQueries }: SidebarProps) {
   const { isDarkMode } = useDarkMode()
   const [hoveredQuery, setHoveredQuery] = useState<string | null>(null)
   const [expandedDatabases, setExpandedDatabases] = useState<Set<string>>(new Set())
   const [searchQuery, setSearchQuery] = useState('')
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [editingName, setEditingName] = useState('')
 
   const { data: catalog } = useQuery({
     queryKey: ['athenaCatalog'],
@@ -58,6 +65,27 @@ export default function Sidebar({ queries, onQuerySelect, onTableClick, refetchQ
       }
       return newSet
     })
+  }
+
+  const handleEditClick = (e: React.MouseEvent, query: Query) => {
+    e.stopPropagation()
+    onEditQueryId(query.id)
+    setEditingName(query.name)
+  }
+
+  const handleEditSave = (e: React.MouseEvent | React.KeyboardEvent, queryId: string) => {
+    e.stopPropagation()
+    if (editingName.trim()) {
+      onQueryRename(queryId, editingName.trim())
+    } else {
+      onEditQueryId(null)
+    }
+  }
+
+  const handleEditCancel = (e: React.MouseEvent | React.KeyboardEvent) => {
+    e.stopPropagation()
+    onEditQueryId(null)
+    setEditingName('')
   }
 
   // Filter databases and tables based on search query
@@ -179,33 +207,101 @@ export default function Sidebar({ queries, onQuerySelect, onTableClick, refetchQ
                 onMouseLeave={() => setHoveredQuery(null)}
               >
                 <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-medium truncate transition-colors ${
-                    isDarkMode ? 'text-white' : 'text-gray-900'
-                  }`}>
-                    {query.name}
-                  </div>
-                  {query.description && (
-                    <div className={`text-xs truncate mt-1 transition-colors ${
-                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                    }`}>
-                      {query.description}
-                    </div>
+                  {editQueryId === query.id ? (
+                    <input
+                      type="text"
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      className={`text-sm font-medium w-full bg-transparent border rounded px-2 py-1 transition-colors ${
+                        isDarkMode 
+                          ? 'text-white border-gray-500 focus:border-blue-400' 
+                          : 'text-gray-900 border-gray-300 focus:border-blue-500'
+                      } focus:outline-none`}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleEditSave(e, query.id)
+                        } else if (e.key === 'Escape') {
+                          handleEditCancel(e)
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      autoFocus
+                    />
+                  ) : (
+                    <>
+                      <div className={`text-sm font-medium truncate transition-colors ${
+                        isDarkMode ? 'text-white' : 'text-gray-900'
+                      }`}>
+                        {query.name}
+                      </div>
+                      {query.description && (
+                        <div className={`text-xs truncate mt-1 transition-colors ${
+                          isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                        }`}>
+                          {query.description}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
                 
-                <button
-                  onClick={(e) => handleDeleteQuery(e, query.id)}
-                  className={`ml-2 p-1 rounded transition-all cursor-pointer ${
-                    hoveredQuery === query.id
-                      ? isDarkMode 
-                        ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20 opacity-100' 
-                        : 'text-red-600 hover:text-red-700 hover:bg-red-50 opacity-100'
-                      : 'opacity-0 pointer-events-none'
-                  }`}
-                  title="Delete Query"
-                >
-                  <IconTrash size={16} />
-                </button>
+                <div className="flex items-center space-x-1">
+                  {editQueryId === query.id ? (
+                    <>
+                      <button
+                        onClick={(e) => handleEditSave(e, query.id)}
+                        className={`p-1 rounded transition-all cursor-pointer ${
+                          isDarkMode 
+                            ? 'text-green-400 hover:text-green-300 hover:bg-green-900/20' 
+                            : 'text-green-600 hover:text-green-700 hover:bg-green-50'
+                        }`}
+                        title="Save"
+                      >
+                        <IconCheck size={16} />
+                      </button>
+                      <button
+                        onClick={handleEditCancel}
+                        className={`p-1 rounded transition-all cursor-pointer ${
+                          isDarkMode 
+                            ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700' 
+                            : 'text-gray-600 hover:text-gray-700 hover:bg-gray-100'
+                        }`}
+                        title="Cancel"
+                      >
+                        <IconX size={16} />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={(e) => handleEditClick(e, query)}
+                        className={`p-1 rounded transition-all cursor-pointer ${
+                          hoveredQuery === query.id
+                            ? isDarkMode 
+                              ? 'text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 opacity-100' 
+                              : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50 opacity-100'
+                            : 'opacity-0 pointer-events-none'
+                        }`}
+                        title="Edit Query Name"
+                      >
+                        <IconEdit size={16} />
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteQuery(e, query.id)}
+                        className={`p-1 rounded transition-all cursor-pointer ${
+                          hoveredQuery === query.id
+                            ? isDarkMode 
+                              ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20 opacity-100' 
+                              : 'text-red-600 hover:text-red-700 hover:bg-red-50 opacity-100'
+                            : 'opacity-0 pointer-events-none'
+                        }`}
+                        title="Delete Query"
+                      >
+                        <IconTrash size={16} />
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             ))}
             
@@ -296,7 +392,7 @@ export default function Sidebar({ queries, onQuerySelect, onTableClick, refetchQ
                           <IconTable size={16} className={`flex-shrink-0 transition-colors ${
                             isDarkMode ? 'text-green-400' : 'text-green-600'
                           }`} />
-                          <span className={`text-xs transition-colors overflow-hidden text-ellipsis whitespace-nowrap ${
+                          <span className={`text-sm font-medium transition-colors overflow-hidden text-ellipsis whitespace-nowrap ${
                             isDarkMode ? 'text-gray-300' : 'text-gray-700'
                           }`}
                             title={table.name}>
