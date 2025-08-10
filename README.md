@@ -1,7 +1,7 @@
 # Zeus - Athena Query Sharing Platform
 
 <div align="center">
-  <img src="zeus.png" alt="Zeus Logo" width="100" height="100">
+  <img src="zeus.png" alt="Zeus Logo">
   
   **A modern, collaborative SQL query platform for Amazon Athena**
   
