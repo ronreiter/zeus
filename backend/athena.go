@@ -95,56 +95,85 @@ func getAthenaResults(executionID string, page, size int) (*QueryResults, error)
 		return result, nil
 	}
 
-	// Get results
-	resultsInput := &athena.GetQueryResultsInput{
-		QueryExecutionId: aws.String(executionID),
-		MaxResults:       aws.Int64(int64(size)),
-	}
-
-	// Calculate offset for pagination
-	offset := (page - 1) * size
-	if offset > 0 {
-		// For pagination, we'd need to handle NextToken properly
-		// This is a simplified implementation
-	}
-
-	resultsOutput, err := athenaClient.GetQueryResults(resultsInput)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get query results: %v", err)
-	}
-
-	// Parse results
+	// Get all results to calculate total count
+	var allRows [][]string
 	var columns []string
-	var rows [][]string
-
-	if len(resultsOutput.ResultSet.Rows) > 0 {
-		// First row contains column headers
-		headerRow := resultsOutput.ResultSet.Rows[0]
-		for _, col := range headerRow.Data {
-			if col.VarCharValue != nil {
-				columns = append(columns, *col.VarCharValue)
-			}
+	var nextToken *string
+	
+	for {
+		resultsInput := &athena.GetQueryResultsInput{
+			QueryExecutionId: aws.String(executionID),
+			MaxResults:       aws.Int64(1000), // Get larger chunks for efficiency
+		}
+		
+		if nextToken != nil {
+			resultsInput.NextToken = nextToken
 		}
 
-		// Remaining rows contain data
-		for i := 1; i < len(resultsOutput.ResultSet.Rows); i++ {
-			row := resultsOutput.ResultSet.Rows[i]
-			var dataRow []string
-			for _, col := range row.Data {
-				value := ""
-				if col.VarCharValue != nil {
-					value = *col.VarCharValue
+		resultsOutput, err := athenaClient.GetQueryResults(resultsInput)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get query results: %v", err)
+		}
+
+		// Parse results
+		if len(resultsOutput.ResultSet.Rows) > 0 {
+			startIdx := 0
+			// First row contains column headers (only on first iteration)
+			if len(columns) == 0 {
+				headerRow := resultsOutput.ResultSet.Rows[0]
+				for _, col := range headerRow.Data {
+					if col.VarCharValue != nil {
+						columns = append(columns, *col.VarCharValue)
+					}
 				}
-				dataRow = append(dataRow, value)
+				startIdx = 1
 			}
-			rows = append(rows, dataRow)
+
+			// Add data rows
+			for i := startIdx; i < len(resultsOutput.ResultSet.Rows); i++ {
+				row := resultsOutput.ResultSet.Rows[i]
+				var dataRow []string
+				for _, col := range row.Data {
+					value := ""
+					if col.VarCharValue != nil {
+						value = *col.VarCharValue
+					}
+					dataRow = append(dataRow, value)
+				}
+				allRows = append(allRows, dataRow)
+			}
 		}
+
+		// Check if there are more results
+		if resultsOutput.NextToken == nil {
+			break
+		}
+		nextToken = resultsOutput.NextToken
+	}
+
+	// Calculate pagination
+	total := len(allRows)
+	offset := (page - 1) * size
+	end := offset + size
+	
+	// Handle bounds
+	if offset >= total {
+		offset = total
+		end = total
+	} else if end > total {
+		end = total
+	}
+	
+	// Get the page subset
+	var pageRows [][]string
+	if offset < total {
+		pageRows = allRows[offset:end]
 	}
 
 	return &QueryResults{
 		Columns: columns,
-		Rows:    rows,
-		Total:   int64(len(rows)),
+		Rows:    pageRows,
+		Total:   int64(total),
 		Page:    page,
 		Size:    size,
 		Status:  status,
