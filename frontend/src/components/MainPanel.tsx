@@ -145,7 +145,7 @@ export default function MainPanel({
   }
 
   return (
-    <div className={`flex-1 flex flex-col transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+    <div className={`flex-1 flex flex-col min-w-0 transition-colors ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
       <div className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
         <div className={`px-6 py-3 border-b ${isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-white'}`}>
           <div className="flex items-center justify-between">
@@ -182,8 +182,8 @@ export default function MainPanel({
         />
       </div>
 
-      <div className="flex-1 flex flex-col min-h-0">
-        <div className="flex-1 flex min-h-0">
+      <div className="flex-1 flex flex-col min-h-0 min-w-0">
+        <div className="flex-1 flex min-h-0 min-w-0">
           <div className="flex-1 flex flex-col min-w-0">
             <QueryEditor
               query={activeQuery}
@@ -204,7 +204,7 @@ export default function MainPanel({
         </div>
         
         {currentExecutionId && (
-          <div className={`border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+          <div className={`border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} min-w-0`}>
             <ResultsPanel 
               key={resultsKey} 
               executionId={currentExecutionId}

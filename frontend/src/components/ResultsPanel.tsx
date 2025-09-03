@@ -136,7 +136,7 @@ export default function ResultsPanel({ executionId, parameters, onStatusChange, 
   const totalPages = results ? Math.ceil(results.total / pageSize) : 0
 
   return (
-    <div className={`flex flex-col h-80 transition-colors ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+    <div className={`flex flex-col h-80 min-w-0 w-full transition-colors ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
       <div className={`flex items-center justify-between p-4 border-b transition-colors ${
         isDarkMode ? 'border-gray-700' : 'border-gray-200'
       }`}>
@@ -241,7 +241,7 @@ export default function ResultsPanel({ executionId, parameters, onStatusChange, 
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <div className={`text-sm transition-colors ${
@@ -281,8 +281,8 @@ export default function ResultsPanel({ executionId, parameters, onStatusChange, 
             </div>
           </div>
         ) : results && results.status === 'SUCCEEDED' && results.columns?.length > 0 && results.rows?.length > 0 ? (
-          <div className="overflow-auto">
-            <table className={`min-w-full divide-y transition-colors ${
+          <div className="overflow-auto h-full">
+            <table className={`divide-y transition-colors ${
               isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
             }`}>
               <thead className={`sticky top-0 transition-colors ${
